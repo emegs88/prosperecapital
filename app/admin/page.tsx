@@ -16,14 +16,19 @@ import {
   BarChart3,
   Download,
   Plus,
-  Search
+  Search,
+  Calendar,
+  Percent
 } from 'lucide-react';
 import { formatCurrency, formatPercentage } from '@/lib/calculations';
 import { 
   mockInvestors, 
   mockInvestments, 
   mockTransactions,
-  mockPools 
+  mockPools,
+  mockMonthlyReturns,
+  calculateInvestmentCurrentValue,
+  getInvestmentEvolution
 } from '@/lib/mockData';
 import { mockUsers, createUser, User } from '@/lib/auth';
 import { motion } from 'framer-motion';
@@ -63,14 +68,29 @@ const mockBidConSales = [
 ];
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'investors' | 'investments' | 'cards' | 'sales' | 'dre' | 'users'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'investors' | 'investments' | 'cards' | 'sales' | 'dre' | 'users' | 'returns'>('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateUser, setShowCreateUser] = useState(false);
+  const [showCreateInvestment, setShowCreateInvestment] = useState(false);
+  const [showAddReturn, setShowAddReturn] = useState(false);
+  const [selectedInvestment, setSelectedInvestment] = useState<string | null>(null);
   const [newUser, setNewUser] = useState({
     name: '',
     email: '',
     password: '',
     role: 'investor' as 'admin' | 'investor',
+  });
+  const [newInvestment, setNewInvestment] = useState({
+    investorId: '1',
+    amount: '',
+    type: 'single' as 'single' | 'recurring',
+    pool: 'mixed' as 'base' | 'performance' | 'mixed',
+    date: new Date().toISOString().split('T')[0],
+  });
+  const [newReturn, setNewReturn] = useState({
+    investmentId: '',
+    month: '',
+    returnPercentage: '',
   });
   
   // Calculate admin metrics
@@ -109,6 +129,7 @@ export default function AdminPage() {
           { id: 'overview', label: 'Visão Geral' },
           { id: 'investors', label: 'Investidores' },
           { id: 'investments', label: 'Aportes' },
+          { id: 'returns', label: 'Rentabilidades' },
           { id: 'cards', label: 'Cartas' },
           { id: 'sales', label: 'Vendas BidCon' },
           { id: 'dre', label: 'DRE' },
@@ -253,43 +274,542 @@ export default function AdminPage() {
         <Card>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold text-white">Aportes</h2>
-            <Button>
+            <Button onClick={() => setShowCreateInvestment(true)}>
               <Plus className="w-4 h-4 mr-2" />
-              Novo Aporte
+              Novo Aporte Retroativo
             </Button>
           </div>
           
+          {showCreateInvestment && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6 p-6 bg-prospere-gray-800 rounded-lg border border-prospere-gray-700"
+            >
+              <h3 className="text-lg font-bold text-white mb-4">Criar Aporte Retroativo</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Select
+                  label="Investidor"
+                  value={newInvestment.investorId}
+                  onChange={(e) => setNewInvestment({ ...newInvestment, investorId: e.target.value })}
+                  options={mockInvestors.map(inv => ({ value: inv.id, label: inv.name }))}
+                />
+                <Input
+                  label="Valor do Aporte"
+                  type="number"
+                  value={newInvestment.amount}
+                  onChange={(e) => setNewInvestment({ ...newInvestment, amount: e.target.value })}
+                  placeholder="20000"
+                />
+                <Select
+                  label="Tipo"
+                  value={newInvestment.type}
+                  onChange={(e) => setNewInvestment({ ...newInvestment, type: e.target.value as 'single' | 'recurring' })}
+                  options={[
+                    { value: 'single', label: 'Aporte Único' },
+                    { value: 'recurring', label: 'Aporte Recorrente' },
+                  ]}
+                />
+                <Select
+                  label="Pool"
+                  value={newInvestment.pool}
+                  onChange={(e) => setNewInvestment({ ...newInvestment, pool: e.target.value as 'base' | 'performance' | 'mixed' })}
+                  options={[
+                    { value: 'base', label: 'Renda Base' },
+                    { value: 'performance', label: 'Performance' },
+                    { value: 'mixed', label: 'Misto' },
+                  ]}
+                />
+                <Input
+                  label="Data do Aporte"
+                  type="date"
+                  value={newInvestment.date}
+                  onChange={(e) => setNewInvestment({ ...newInvestment, date: e.target.value })}
+                />
+              </div>
+              <div className="flex gap-2 mt-4">
+                <Button
+                  onClick={() => {
+                    if (newInvestment.amount && newInvestment.investorId) {
+                      alert(`Aporte retroativo de ${formatCurrency(parseFloat(newInvestment.amount))} criado com sucesso!\n\nAgora você pode adicionar rentabilidades mensais na aba "Rentabilidades".`);
+                      setNewInvestment({ investorId: '1', amount: '', type: 'single', pool: 'mixed', date: new Date().toISOString().split('T')[0] });
+                      setShowCreateInvestment(false);
+                    } else {
+                      alert('Preencha todos os campos');
+                    }
+                  }}
+                >
+                  Criar Aporte
+                </Button>
+                <Button variant="outline" onClick={() => setShowCreateInvestment(false)}>
+                  Cancelar
+                </Button>
+              </div>
+            </motion.div>
+          )}
+          
           <div className="space-y-2">
-            {mockInvestments.map((investment) => (
-              <div
-                key={investment.id}
-                className="p-4 bg-prospere-gray-800 rounded-lg border border-prospere-gray-700"
-              >
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="font-semibold text-white">Aporte #{investment.id}</p>
-                    <p className="text-sm text-prospere-gray-400">
-                      {investment.type === 'single' ? 'Aporte Único' : 'Aporte Recorrente'} - {investment.pool}
-                    </p>
-                    <p className="text-xs text-prospere-gray-500 mt-1">
-                      {investment.date.toLocaleDateString('pt-BR')}
-                    </p>
+            {mockInvestments.map((investment) => {
+              const currentValue = calculateInvestmentCurrentValue(investment);
+              const evolution = getInvestmentEvolution(investment);
+              const totalReturn = ((currentValue - investment.amount) / investment.amount) * 100;
+              
+              return (
+                <div
+                  key={investment.id}
+                  className="p-4 bg-prospere-gray-800 rounded-lg border border-prospere-gray-700"
+                >
+                  <div className="flex justify-between items-center">
+                    <div className="flex-1">
+                      <p className="font-semibold text-white">Aporte #{investment.id}</p>
+                      <p className="text-sm text-prospere-gray-400">
+                        {investment.type === 'single' ? 'Aporte Único' : 'Aporte Recorrente'} - {investment.pool}
+                      </p>
+                      <p className="text-xs text-prospere-gray-500 mt-1">
+                        {investment.date.toLocaleDateString('pt-BR')}
+                      </p>
+                      {investment.monthlyReturns && investment.monthlyReturns.length > 0 && (
+                        <div className="mt-2 flex gap-2 flex-wrap">
+                          {investment.monthlyReturns.map((ret) => (
+                            <span
+                              key={ret.id}
+                              className="px-2 py-1 bg-prospere-red/20 border border-prospere-red text-prospere-red text-xs rounded"
+                            >
+                              {ret.month}: {ret.returnPercentage.toFixed(1)}%
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-right ml-4">
+                      <p className="text-xs text-prospere-gray-400">Valor Inicial</p>
+                      <p className="text-sm font-medium text-prospere-gray-300">
+                        {formatCurrency(investment.amount)}
+                      </p>
+                      <p className="text-xs text-prospere-gray-400 mt-2">Valor Atual</p>
+                      <p className="text-lg font-bold text-white">
+                        {formatCurrency(currentValue)}
+                      </p>
+                      <p className={`text-xs mt-1 ${totalReturn >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        {totalReturn >= 0 ? '+' : ''}{totalReturn.toFixed(2)}%
+                      </p>
+                      <span className={`inline-block mt-1 px-2 py-1 border text-xs rounded ${
+                        investment.status === 'active'
+                          ? 'bg-green-900/30 border-green-800 text-green-400'
+                          : 'bg-gray-900/30 border-gray-800 text-gray-400'
+                      }`}>
+                        {investment.status}
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-white">
-                      {formatCurrency(investment.amount)}
-                    </p>
-                    <span className={`inline-block mt-1 px-2 py-1 border text-xs rounded ${
-                      investment.status === 'active'
-                        ? 'bg-green-900/30 border-green-800 text-green-400'
-                        : 'bg-gray-900/30 border-gray-800 text-gray-400'
-                    }`}>
-                      {investment.status}
-                    </span>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+      
+      {/* Returns Tab */}
+      {activeTab === 'returns' && (
+        <Card>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-white">Rentabilidades Mensais por Cliente</h2>
+            <div className="flex gap-2">
+              <Select
+                value={selectedInvestment || ''}
+                onChange={(e) => {
+                  setSelectedInvestment(e.target.value);
+                  setShowAddReturn(false);
+                }}
+                options={[
+                  { value: '', label: 'Selecione um investimento...' },
+                  ...mockInvestments.map(inv => ({
+                    value: inv.id,
+                    label: `${mockInvestors.find(i => i.id === inv.investorId)?.name || 'Cliente'} - ${formatCurrency(inv.amount)} - ${inv.date.toLocaleDateString('pt-BR')}`
+                  }))
+                ]}
+                className="w-80"
+              />
+              {selectedInvestment && (
+                <Button onClick={() => setShowAddReturn(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar Mês
+                </Button>
+              )}
+            </div>
+          </div>
+          
+          {selectedInvestment && (() => {
+            const investment = mockInvestments.find(inv => inv.id === selectedInvestment);
+            if (!investment) return null;
+            
+            const investor = mockInvestors.find(inv => inv.id === investment.investorId);
+            const investmentDate = new Date(investment.date);
+            const today = new Date();
+            
+            // Generate list of months from investment date to today
+            const months: string[] = [];
+            let currentDate = new Date(investmentDate.getFullYear(), investmentDate.getMonth(), 1);
+            const endDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            
+            while (currentDate <= endDate) {
+              const year = currentDate.getFullYear();
+              const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+              months.push(`${year}-${month}`);
+              currentDate.setMonth(currentDate.getMonth() + 1);
+            }
+            
+            return (
+              <div className="space-y-4">
+                <div className="p-4 bg-prospere-gray-800 rounded-lg border border-prospere-gray-700">
+                  <div className="flex justify-between items-center mb-4">
+                    <div>
+                      <p className="text-lg font-bold text-white">
+                        {investor?.name || 'Cliente'} - Aporte #{investment.id}
+                      </p>
+                      <p className="text-sm text-prospere-gray-400">
+                        Valor Inicial: {formatCurrency(investment.amount)} | 
+                        Data: {investment.date.toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-prospere-gray-400">Valor Atual</p>
+                      <p className="text-2xl font-bold text-white">
+                        {formatCurrency(calculateInvestmentCurrentValue(investment))}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {months.map((month) => {
+                      const existingReturn = investment.monthlyReturns?.find(r => r.month === month);
+                      const [year, monthNum] = month.split('-');
+                      const monthName = new Date(parseInt(year), parseInt(monthNum) - 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+                      
+                      return (
+                        <div
+                          key={month}
+                          className={`p-3 rounded-lg border ${
+                            existingReturn
+                              ? 'bg-green-900/20 border-green-800'
+                              : 'bg-prospere-gray-900 border-prospere-gray-700'
+                          }`}
+                        >
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm font-medium text-white capitalize">
+                              {monthName}
+                            </span>
+                            {existingReturn && (
+                              <span className="px-2 py-1 bg-green-900/30 border border-green-800 text-green-400 text-xs rounded">
+                                {existingReturn.returnPercentage.toFixed(1)}%
+                              </span>
+                            )}
+                          </div>
+                          {existingReturn ? (
+                            <div className="space-y-2">
+                              <Input
+                                type="number"
+                                step="0.1"
+                                value={existingReturn.returnPercentage}
+                                onChange={(e) => {
+                                  const newValue = parseFloat(e.target.value) || 0;
+                                  // In production, this would update the return in the database
+                                  console.log(`Atualizar rentabilidade de ${month} para ${newValue}%`);
+                                  // For now, show preview
+                                  if (investment) {
+                                    const currentValue = calculateInvestmentCurrentValue(investment);
+                                    const updatedValue = currentValue * (1 + newValue / 100);
+                                    // You could update state here to show preview
+                                  }
+                                }}
+                                className="text-sm bg-prospere-gray-800"
+                                placeholder="0.0"
+                              />
+                              <div className="flex gap-1">
+                                <Button
+                                  size="sm"
+                                  onClick={() => {
+                                    const input = document.querySelector(`input[value="${existingReturn.returnPercentage}"]`) as HTMLInputElement;
+                                    if (input) {
+                                      const newValue = parseFloat(input.value) || 0;
+                                      alert(`Rentabilidade de ${monthName} atualizada para ${newValue.toFixed(1)}%!\n\nEm produção, isso salvaria no banco de dados.`);
+                                    }
+                                  }}
+                                  className="flex-1 text-xs"
+                                >
+                                  Salvar
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    if (confirm(`Remover rentabilidade de ${monthName}?`)) {
+                                      alert(`Rentabilidade removida!\n\nEm produção, isso removeria do banco de dados.`);
+                                    }
+                                  }}
+                                  className="text-xs px-2"
+                                >
+                                  ×
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              <Input
+                                type="number"
+                                step="0.1"
+                                placeholder="Ex: 15.0"
+                                className="text-sm bg-prospere-gray-800"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    const input = e.target as HTMLInputElement;
+                                    const value = parseFloat(input.value);
+                                    if (!isNaN(value) && value > 0) {
+                                      setNewReturn({
+                                        investmentId: selectedInvestment,
+                                        month: month,
+                                        returnPercentage: value.toString(),
+                                      });
+                                      setShowAddReturn(true);
+                                    }
+                                  }
+                                }}
+                              />
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  const input = document.querySelector(`input[placeholder="Ex: 15.0"]`) as HTMLInputElement;
+                                  if (input && input.value) {
+                                    setNewReturn({
+                                      investmentId: selectedInvestment,
+                                      month: month,
+                                      returnPercentage: input.value,
+                                    });
+                                    setShowAddReturn(true);
+                                  } else {
+                                    // Direct add with prompt
+                                    const value = prompt(`Digite a rentabilidade para ${monthName} (%):`);
+                                    if (value && !isNaN(parseFloat(value))) {
+                                      setNewReturn({
+                                        investmentId: selectedInvestment,
+                                        month: month,
+                                        returnPercentage: value,
+                                      });
+                                      setShowAddReturn(true);
+                                    }
+                                  }
+                                }}
+                                className="w-full text-xs"
+                              >
+                                <Plus className="w-3 h-3 mr-1" />
+                                Adicionar
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
-            ))}
+            );
+          })()}
+          
+          {showAddReturn && selectedInvestment && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6 p-6 bg-prospere-gray-800 rounded-lg border border-prospere-gray-700"
+            >
+              <h3 className="text-lg font-bold text-white mb-4">Adicionar Rentabilidade Mensal</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-prospere-gray-300 mb-2">
+                    Mês/Ano
+                  </label>
+                  <Input
+                    type="text"
+                    value={newReturn.month}
+                    onChange={(e) => setNewReturn({ ...newReturn, month: e.target.value })}
+                    placeholder="2024-11"
+                    disabled
+                  />
+                  <p className="text-xs text-prospere-gray-400 mt-1">
+                    {newReturn.month && (() => {
+                      const [year, month] = newReturn.month.split('-');
+                      return new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+                    })()}
+                  </p>
+                </div>
+                <Input
+                  label="Rentabilidade (%)"
+                  type="number"
+                  step="0.1"
+                  value={newReturn.returnPercentage}
+                  onChange={(e) => setNewReturn({ ...newReturn, returnPercentage: e.target.value })}
+                  placeholder="15.0"
+                />
+              </div>
+              <div className="flex gap-2 mt-4">
+                <Button
+                  onClick={() => {
+                    if (newReturn.month && newReturn.returnPercentage) {
+                      const investment = mockInvestments.find(inv => inv.id === newReturn.investmentId);
+                      if (investment) {
+                        const currentValue = calculateInvestmentCurrentValue(investment);
+                        const newValue = currentValue * (1 + parseFloat(newReturn.returnPercentage) / 100);
+                        const [year, month] = newReturn.month.split('-');
+                        const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+                        
+                        alert(
+                          `Rentabilidade de ${newReturn.returnPercentage}% adicionada para ${monthName}!\n\n` +
+                          `Valor antes: ${formatCurrency(currentValue)}\n` +
+                          `Valor após: ${formatCurrency(newValue)}\n` +
+                          `Ganho: ${formatCurrency(newValue - currentValue)}`
+                        );
+                        setNewReturn({ investmentId: selectedInvestment, month: '', returnPercentage: '' });
+                        setShowAddReturn(false);
+                      }
+                    } else {
+                      alert('Preencha a rentabilidade');
+                    }
+                  }}
+                >
+                  Adicionar Rentabilidade
+                </Button>
+                <Button variant="outline" onClick={() => {
+                  setNewReturn({ investmentId: selectedInvestment, month: '', returnPercentage: '' });
+                  setShowAddReturn(false);
+                }}>
+                  Cancelar
+                </Button>
+              </div>
+            </motion.div>
+          )}
+          
+          <div className="space-y-4">
+            {mockInvestments
+              .filter(inv => inv.monthlyReturns && inv.monthlyReturns.length > 0)
+              .map((investment) => {
+                const evolution = getInvestmentEvolution(investment);
+                const currentValue = calculateInvestmentCurrentValue(investment);
+                
+                return (
+                  <div
+                    key={investment.id}
+                    className="p-6 bg-prospere-gray-800 rounded-lg border border-prospere-gray-700"
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <p className="font-semibold text-white text-lg">Aporte #{investment.id}</p>
+                        <p className="text-sm text-prospere-gray-400">
+                          Investidor: {mockInvestors.find(inv => inv.id === investment.investorId)?.name || 'N/A'}
+                        </p>
+                        <p className="text-xs text-prospere-gray-500 mt-1">
+                          Data: {investment.date.toLocaleDateString('pt-BR')} | 
+                          Valor Inicial: {formatCurrency(investment.amount)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-prospere-gray-400">Valor Atual</p>
+                        <p className="text-2xl font-bold text-white">
+                          {formatCurrency(currentValue)}
+                        </p>
+                        <p className="text-sm text-green-400 mt-1">
+                          +{formatCurrency(currentValue - investment.amount)} (
+                          +{(((currentValue - investment.amount) / investment.amount) * 100).toFixed(2)}%)
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4">
+                      <h4 className="text-sm font-semibold text-white mb-3">Evolução Mensal</h4>
+                      <div className="space-y-2">
+                        {evolution.map((evol, idx) => (
+                          <div
+                            key={idx}
+                            className="flex justify-between items-center p-3 bg-prospere-gray-900 rounded border border-prospere-gray-700"
+                          >
+                            <div className="flex items-center gap-3">
+                              <Calendar className="w-4 h-4 text-prospere-gray-400" />
+                              <span className="text-sm text-white font-medium">{evol.month}</span>
+                              {evol.returnPercentage > 0 && (
+                                <span className="px-2 py-1 bg-green-900/30 border border-green-800 text-green-400 text-xs rounded flex items-center gap-1">
+                                  <Percent className="w-3 h-3" />
+                                  {evol.returnPercentage.toFixed(1)}%
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-sm font-bold text-white">
+                              {formatCurrency(evol.value)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {evolution.length > 1 && (
+                      <div className="mt-4">
+                        <ResponsiveContainer width="100%" height={200}>
+                          <LineChart data={evolution}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                            <XAxis dataKey="month" stroke="#9CA3AF" fontSize={12} />
+                            <YAxis stroke="#9CA3AF" tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`} />
+                            <Tooltip 
+                              contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '8px' }}
+                              formatter={(value: number) => formatCurrency(value)}
+                            />
+                            <Line 
+                              type="monotone" 
+                              dataKey="value" 
+                              stroke="#DC2626" 
+                              strokeWidth={3}
+                              dot={{ fill: '#DC2626', r: 4 }}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            
+            {mockInvestments.filter(inv => !inv.monthlyReturns || inv.monthlyReturns.length === 0).length > 0 && (
+              <div className="p-4 bg-prospere-gray-800 rounded-lg border border-prospere-gray-700">
+                <p className="text-sm text-prospere-gray-400 mb-2">
+                  Investimentos sem rentabilidades definidas:
+                </p>
+                <div className="space-y-2">
+                  {mockInvestments
+                    .filter(inv => !inv.monthlyReturns || inv.monthlyReturns.length === 0)
+                    .map((investment) => (
+                      <div
+                        key={investment.id}
+                        className="p-3 bg-prospere-gray-900 rounded border border-prospere-gray-700 flex justify-between items-center"
+                      >
+                        <div>
+                          <p className="text-sm font-medium text-white">Aporte #{investment.id}</p>
+                          <p className="text-xs text-prospere-gray-400">
+                            {formatCurrency(investment.amount)} - {investment.date.toLocaleDateString('pt-BR')}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setNewReturn({ investmentId: investment.id, month: '', returnPercentage: '' });
+                            setShowAddReturn(true);
+                          }}
+                        >
+                          <Plus className="w-3 h-3 mr-1" />
+                          Adicionar Rentabilidade
+                        </Button>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
           </div>
         </Card>
       )}

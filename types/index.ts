@@ -6,6 +6,15 @@ export interface Investor {
   createdAt: Date;
 }
 
+export interface MonthlyReturn {
+  id: string;
+  investmentId: string;
+  month: string; // "2024-11" format
+  returnPercentage: number; // 15 = 15%
+  applied: boolean;
+  createdAt: Date;
+}
+
 export interface Investment {
   id: string;
   investorId: string;
@@ -14,6 +23,7 @@ export interface Investment {
   pool: 'base' | 'performance' | 'mixed';
   date: Date;
   status: 'active' | 'withdrawn';
+  monthlyReturns?: MonthlyReturn[]; // Rentabilidades mensais definidas pelo admin
 }
 
 export interface Transaction {

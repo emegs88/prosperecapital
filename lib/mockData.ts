@@ -4,7 +4,8 @@ import {
   Transaction, 
   Withdrawal, 
   Pool,
-  MonthlyData 
+  MonthlyData,
+  MonthlyReturn
 } from '@/types';
 
 // Mock Investor
@@ -32,6 +33,34 @@ export const mockInvestors: Investor[] = [
     email: 'pedro@example.com',
     cpf: '111.222.333-44',
     createdAt: new Date('2023-03-15'),
+  },
+];
+
+// Mock Monthly Returns (rentabilidades definidas pelo admin)
+export const mockMonthlyReturns: MonthlyReturn[] = [
+  {
+    id: 'ret-1',
+    investmentId: 'inv-nov-2024',
+    month: '2024-11',
+    returnPercentage: 15.0,
+    applied: true,
+    createdAt: new Date('2024-12-01'),
+  },
+  {
+    id: 'ret-2',
+    investmentId: 'inv-nov-2024',
+    month: '2024-12',
+    returnPercentage: 3.2,
+    applied: true,
+    createdAt: new Date('2025-01-01'),
+  },
+  {
+    id: 'ret-3',
+    investmentId: 'inv-nov-2024',
+    month: '2025-01',
+    returnPercentage: 2.8,
+    applied: true,
+    createdAt: new Date('2025-02-01'),
   },
 ];
 
@@ -63,6 +92,17 @@ export const mockInvestments: Investment[] = [
     pool: 'performance',
     date: new Date('2023-06-10'),
     status: 'active',
+  },
+  // Exemplo: Investimento retroativo de novembro/2024
+  {
+    id: 'inv-nov-2024',
+    investorId: '1',
+    amount: 20000,
+    type: 'single',
+    pool: 'mixed',
+    date: new Date('2024-11-01'),
+    status: 'active',
+    monthlyReturns: mockMonthlyReturns.filter(r => r.investmentId === 'inv-nov-2024'),
   },
 ];
 
@@ -250,4 +290,136 @@ export function generatePortfolioEvolution(months: number = 12): { month: string
   }
   
   return data;
+}
+
+// Generate comparison data with other investments
+export function generateInvestmentComparison(months: number = 12): {
+  month: string;
+  prospere: number;
+  cdi: number;
+  selic: number;
+  poupanca: number;
+  ipca: number;
+  tesouroIpca: number;
+}[] {
+  const data: {
+    month: string;
+    prospere: number;
+    cdi: number;
+    selic: number;
+    poupanca: number;
+    ipca: number;
+    tesouroIpca: number;
+  }[] = [];
+  
+  // Starting values (normalized to 100)
+  let prospereValue = 100;
+  let cdiValue = 100;
+  let selicValue = 100;
+  let poupancaValue = 100;
+  let ipcaValue = 100;
+  let tesouroIpcaValue = 100;
+  
+  for (let i = 0; i < months; i++) {
+    const date = new Date();
+    date.setMonth(date.getMonth() - (months - i - 1));
+    
+    // Prospere Capital: 2.2% to 3.5% monthly (consortium operations)
+    const prospereReturn = 0.022 + (Math.random() * 0.013);
+    prospereValue = prospereValue * (1 + prospereReturn);
+    
+    // CDI: ~1.0% monthly (12% annual)
+    const cdiReturn = 0.01 + (Math.random() * 0.002);
+    cdiValue = cdiValue * (1 + cdiReturn);
+    
+    // Selic: ~0.9% monthly (10.5% annual)
+    const selicReturn = 0.009 + (Math.random() * 0.001);
+    selicValue = selicValue * (1 + selicReturn);
+    
+    // Poupança: ~0.5% monthly (6% annual)
+    const poupancaReturn = 0.005 + (Math.random() * 0.001);
+    poupancaValue = poupancaValue * (1 + poupancaReturn);
+    
+    // IPCA: ~0.4% monthly (5% annual)
+    const ipcaReturn = 0.004 + (Math.random() * 0.001);
+    ipcaValue = ipcaValue * (1 + ipcaReturn);
+    
+    // Tesouro IPCA+: ~0.6% monthly (7.5% annual)
+    const tesouroReturn = 0.006 + (Math.random() * 0.001);
+    tesouroIpcaValue = tesouroIpcaValue * (1 + tesouroReturn);
+    
+    data.push({
+      month: date.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }),
+      prospere: Math.round(prospereValue * 100) / 100,
+      cdi: Math.round(cdiValue * 100) / 100,
+      selic: Math.round(selicValue * 100) / 100,
+      poupanca: Math.round(poupancaValue * 100) / 100,
+      ipca: Math.round(ipcaValue * 100) / 100,
+      tesouroIpca: Math.round(tesouroIpcaValue * 100) / 100,
+    });
+  }
+  
+  return data;
+}
+
+// Calculate current value of investment based on monthly returns
+export function calculateInvestmentCurrentValue(investment: Investment): number {
+  if (!investment.monthlyReturns || investment.monthlyReturns.length === 0) {
+    return investment.amount;
+  }
+  
+  let currentValue = investment.amount;
+  
+  // Sort returns by month
+  const sortedReturns = [...investment.monthlyReturns].sort((a, b) => 
+    a.month.localeCompare(b.month)
+  );
+  
+  // Apply returns sequentially
+  for (const monthlyReturn of sortedReturns) {
+    if (monthlyReturn.applied) {
+      currentValue = currentValue * (1 + monthlyReturn.returnPercentage / 100);
+    }
+  }
+  
+  return Math.round(currentValue * 100) / 100;
+}
+
+// Get investment evolution with monthly returns
+export function getInvestmentEvolution(investment: Investment): {
+  month: string;
+  value: number;
+  returnPercentage: number;
+}[] {
+  const evolution: { month: string; value: number; returnPercentage: number }[] = [];
+  let currentValue = investment.amount;
+  
+  // Add initial value
+  const investmentDate = new Date(investment.date);
+  evolution.push({
+    month: investmentDate.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }),
+    value: currentValue,
+    returnPercentage: 0,
+  });
+  
+  if (investment.monthlyReturns && investment.monthlyReturns.length > 0) {
+    const sortedReturns = [...investment.monthlyReturns].sort((a, b) => 
+      a.month.localeCompare(b.month)
+    );
+    
+    for (const monthlyReturn of sortedReturns) {
+      if (monthlyReturn.applied) {
+        currentValue = currentValue * (1 + monthlyReturn.returnPercentage / 100);
+        const [year, month] = monthlyReturn.month.split('-');
+        const date = new Date(parseInt(year), parseInt(month) - 1);
+        evolution.push({
+          month: date.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }),
+          value: Math.round(currentValue * 100) / 100,
+          returnPercentage: monthlyReturn.returnPercentage,
+        });
+      }
+    }
+  }
+  
+  return evolution;
 }

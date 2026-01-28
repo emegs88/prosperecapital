@@ -15,7 +15,13 @@ export function Header() {
   
   const isDepositPage = pathname?.includes('/deposito');
   const currentUser = getCurrentUser();
-  const displayUser = currentUser || mockInvestor;
+  const displayUser = currentUser ? {
+    email: currentUser.email,
+    name: currentUser.name,
+  } : {
+    email: mockInvestor.email,
+    name: mockInvestor.name,
+  };
   
   return (
     <header className="h-16 bg-prospere-dark border-b border-prospere-gray-800 flex items-center justify-between px-4 lg:px-6 fixed top-0 right-0 left-0 lg:left-80 z-30">
@@ -52,7 +58,7 @@ export function Header() {
             </div>
             <div className="hidden md:block text-left">
               <p className="text-sm font-medium text-white">{displayUser.email}</p>
-              <p className="text-xs text-prospere-gray-500">{'name' in displayUser ? displayUser.name : displayUser.email}</p>
+              <p className="text-xs text-prospere-gray-500">{displayUser.name}</p>
             </div>
             <ChevronDown className="w-4 h-4 text-prospere-gray-400" />
           </button>
@@ -64,7 +70,7 @@ export function Header() {
               className="absolute right-0 mt-2 w-64 bg-prospere-gray-900 border border-prospere-gray-800 rounded-lg shadow-lg py-2"
             >
               <div className="px-4 py-2 border-b border-prospere-gray-800">
-                <p className="text-sm font-medium text-white">{'name' in displayUser ? displayUser.name : displayUser.email}</p>
+                <p className="text-sm font-medium text-white">{displayUser.name}</p>
                 <p className="text-xs text-prospere-gray-400">{displayUser.email}</p>
               </div>
               <button className="w-full text-left px-4 py-2 text-sm text-prospere-gray-400 hover:bg-prospere-gray-800 hover:text-white">

@@ -49,6 +49,8 @@ export default function AberturaContaPage() {
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [emailCode, setEmailCode] = useState('');
   const [phoneCode, setPhoneCode] = useState('');
+  const [generatedEmailCode, setGeneratedEmailCode] = useState<string | null>(null);
+  const [generatedPhoneCode, setGeneratedPhoneCode] = useState<string | null>(null);
   const [showEmailCodeInput, setShowEmailCodeInput] = useState(false);
   const [showPhoneCodeInput, setShowPhoneCodeInput] = useState(false);
   const [documents, setDocuments] = useState<DocumentFile[]>([]);
@@ -126,15 +128,25 @@ export default function AberturaContaPage() {
 
   const handleVerifyEmail = () => {
     // Simular envio de código
+    // Em produção, enviaria código real de capital@prospere.com.br
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedEmailCode(verificationCode);
+    console.log(`Email de verificação enviado de capital@prospere.com.br para ${email}`);
+    console.log(`Código de verificação: ${verificationCode}`);
+    // Em produção, salvaria o código no backend e enviaria via email usando capital@prospere.com.br como remetente
     setShowEmailCodeInput(true);
-    // Em produção, enviaria código real
   };
 
   const handleConfirmEmailCode = () => {
     // Simular validação (em produção validaria com backend)
     if (emailCode.length === 6) {
-      setEmailVerified(true);
-      setShowEmailCodeInput(false);
+      if (generatedEmailCode && emailCode === generatedEmailCode) {
+        setEmailVerified(true);
+        setShowEmailCodeInput(false);
+        setGeneratedEmailCode(null);
+      } else {
+        alert('Código inválido. Verifique o código enviado por email.');
+      }
     } else {
       alert('Código inválido. Digite o código de 6 dígitos.');
     }
@@ -142,15 +154,25 @@ export default function AberturaContaPage() {
 
   const handleVerifyPhone = () => {
     // Simular envio de código SMS
+    // Em produção, enviaria código real via SMS
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedPhoneCode(verificationCode);
+    console.log(`SMS de verificação enviado para ${phone}`);
+    console.log(`Código de verificação: ${verificationCode}`);
+    // Em produção, salvaria o código no backend e enviaria via SMS
     setShowPhoneCodeInput(true);
-    // Em produção, enviaria código real
   };
 
   const handleConfirmPhoneCode = () => {
     // Simular validação (em produção validaria com backend)
     if (phoneCode.length === 6) {
-      setPhoneVerified(true);
-      setShowPhoneCodeInput(false);
+      if (generatedPhoneCode && phoneCode === generatedPhoneCode) {
+        setPhoneVerified(true);
+        setShowPhoneCodeInput(false);
+        setGeneratedPhoneCode(null);
+      } else {
+        alert('Código inválido. Verifique o código enviado por SMS.');
+      }
     } else {
       alert('Código inválido. Digite o código de 6 dígitos.');
     }
@@ -358,6 +380,14 @@ export default function AberturaContaPage() {
                   )}
                   {showEmailCodeInput && !emailVerified && (
                     <div className="mt-2 space-y-2">
+                      <div className="text-xs text-prospere-gray-400 bg-prospere-gray-900 p-2 rounded border border-prospere-gray-800">
+                        <p className="text-prospere-gray-300">
+                          📧 Código enviado de <strong className="text-white">capital@prospere.com.br</strong>
+                        </p>
+                        <p className="mt-1 text-prospere-gray-400">
+                          Verifique sua caixa de entrada e spam. O código expira em 10 minutos.
+                        </p>
+                      </div>
                       <Input
                         label="Código de Verificação"
                         type="text"
@@ -425,6 +455,27 @@ export default function AberturaContaPage() {
                   )}
                   {showPhoneCodeInput && !phoneVerified && (
                     <div className="mt-2 space-y-2">
+                      <div className="text-xs text-prospere-gray-400 bg-prospere-gray-900 p-3 rounded border border-prospere-gray-800">
+                        <p className="text-prospere-gray-300 mb-2">
+                          📱 Código SMS enviado para <strong className="text-white">{phone}</strong>
+                        </p>
+                        <p className="mt-1 text-prospere-gray-400 mb-2">
+                          Verifique suas mensagens. O código expira em 10 minutos.
+                        </p>
+                        {generatedPhoneCode && (
+                          <div className="mt-2 p-2 bg-prospere-red/10 border border-prospere-red rounded">
+                            <p className="text-xs text-prospere-gray-400 mb-1">
+                              🔍 <strong>Modo Desenvolvimento:</strong> Como o SMS ainda não está configurado, use este código:
+                            </p>
+                            <p className="text-lg font-bold text-white text-center py-1 bg-prospere-gray-800 rounded">
+                              {generatedPhoneCode}
+                            </p>
+                            <p className="text-xs text-prospere-gray-500 mt-1 text-center">
+                              Em produção, este código seria enviado por SMS
+                            </p>
+                          </div>
+                        )}
+                      </div>
                       <Input
                         label="Código de Verificação SMS"
                         type="text"
