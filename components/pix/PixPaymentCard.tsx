@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { QrCode, Copy, CheckCircle2, Clock, RefreshCw, AlertCircle } from 'lucide-react';
+import { QrCode, Copy, CheckCircle2, Clock, RefreshCw, AlertCircle, XCircle } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/calculations';
 import { companyData } from '@/lib/companyData';
 import Image from 'next/image';
