@@ -18,16 +18,74 @@ import {
 import { formatCurrency } from '@/lib/calculations';
 import { companyData } from '@/lib/companyData';
 import { motion } from 'framer-motion';
+import { PixPaymentCard } from '@/components/pix/PixPaymentCard';
 
 export default function DepositoPage() {
   const [amount, setAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('pix');
+  const [pixData, setPixData] = useState<{
+    qrCode?: string;
+    qrCodeImage?: string;
+    transactionId?: string;
+    expiresAt?: string;
+  } | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
   
   const paymentMethods = [
     { value: 'pix', label: 'Transferência PIX', icon: QrCode },
     { value: 'ted', label: 'TED/DOC', icon: Building2 },
     { value: 'card', label: 'Cartão de Crédito', icon: CreditCard },
   ];
+
+  const handleGeneratePix = async () => {
+    if (!amount || parseFloat(amount) <= 0) {
+      alert('Por favor, informe um valor válido');
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const response = await fetch('/api/pix/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: parseFloat(amount),
+          description: `Depósito Prospere Capital - ${formatCurrency(parseFloat(amount))}`,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setPixData(data.data);
+      } else {
+        alert(data.error || 'Erro ao gerar QR Code PIX. Verifique as configurações da API C6 Bank.');
+      }
+    } catch (error) {
+      console.error('Erro ao gerar PIX:', error);
+      alert('Erro ao gerar QR Code PIX. Tente novamente.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleRefreshPix = () => {
+    setPixData(null);
+    handleGeneratePix();
+  };
+
+  const handlePaymentConfirmed = (data: any) => {
+    // Pagamento confirmado!
+    alert(`Pagamento confirmado! Valor: ${formatCurrency(data.amount || parseFloat(amount))}\n\nSeu depósito será creditado em breve.`);
+    
+    // Aqui você pode:
+    // - Redirecionar para página de confirmação
+    // - Atualizar o saldo do usuário
+    // - Enviar notificação
+    // - Registrar no histórico
+  };
   
   return (
     <div className="space-y-6">
@@ -106,9 +164,23 @@ export default function DepositoPage() {
               </div>
             )}
             
-            <Button size="lg" className="w-full">
-              <ArrowDownCircle className="w-5 h-5 mr-2" />
-              Confirmar Depósito
+            <Button 
+              size="lg" 
+              className="w-full"
+              onClick={paymentMethod === 'pix' ? handleGeneratePix : undefined}
+              disabled={isGenerating || !amount || parseFloat(amount) <= 0}
+            >
+              {isGenerating ? (
+                <>
+                  <Clock className="w-5 h-5 mr-2 animate-spin" />
+                  Gerando QR Code...
+                </>
+              ) : (
+                <>
+                  <ArrowDownCircle className="w-5 h-5 mr-2" />
+                  {paymentMethod === 'pix' ? 'Gerar QR Code PIX' : 'Confirmar Depósito'}
+                </>
+              )}
             </Button>
           </div>
           
@@ -189,6 +261,26 @@ export default function DepositoPage() {
           </div>
         </div>
       </Card>
+
+      {/* PIX Payment Card */}
+      {pixData && paymentMethod === 'pix' && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <PixPaymentCard
+            amount={parseFloat(amount)}
+            description={`Depósito Prospere Capital`}
+            transactionId={pixData.transactionId}
+            qrCode={pixData.qrCode}
+            qrCodeImage={pixData.qrCodeImage}
+            expiresAt={pixData.expiresAt}
+            onRefresh={handleRefreshPix}
+            onPaymentConfirmed={handlePaymentConfirmed}
+          />
+        </motion.div>
+      )}
     </div>
   );
 }
