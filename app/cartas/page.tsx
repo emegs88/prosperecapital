@@ -79,6 +79,11 @@ export default function CartasPage() {
       <div>
         <h1 className="text-3xl font-bold text-white mb-2">Comprar Cartas</h1>
         <p className="text-prospere-gray-400">Cartas de consórcio lastreadas disponíveis para compra</p>
+        <div className="mt-4 p-4 bg-prospere-gray-900 border border-prospere-gray-700 rounded-lg">
+          <p className="text-sm text-prospere-gray-300">
+            <strong className="text-white">Como funciona:</strong> Estas cartas foram compradas com recursos dos investidores e estão disponíveis para venda na plataforma BidCon. Quando vendidas com lucro, o lucro retorna proporcionalmente para os investidores que financiaram a compra.
+          </p>
+        </div>
       </div>
       
       {/* Filters */}

@@ -61,7 +61,12 @@ export default function VenderCartasPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-white mb-2">Vender Cartas</h1>
-        <p className="text-prospere-gray-400">Venda suas cartas de consórcio lastreadas</p>
+        <p className="text-prospere-gray-400">Venda suas cartas de consórcio lastreadas na plataforma BidCon</p>
+        <div className="mt-4 p-4 bg-prospere-gray-900 border border-prospere-gray-700 rounded-lg">
+          <p className="text-sm text-prospere-gray-300">
+            <strong className="text-white">Como funciona:</strong> Sua carta será publicada na plataforma BidCon. Quando vendida com lucro, o lucro retorna para você. Se a carta foi comprada com recursos de investidores, o lucro será distribuído proporcionalmente entre os investidores que financiaram a compra.
+          </p>
+        </div>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -168,9 +173,9 @@ export default function VenderCartasPage() {
               <div className="flex items-start gap-2">
                 <AlertCircle className="w-5 h-5 text-yellow-400 mt-0.5" />
                 <div>
-                  <p className="text-sm text-yellow-400 font-medium mb-1">Venda Lastreada</p>
+                  <p className="text-sm text-yellow-400 font-medium mb-1">Venda na BidCon</p>
                   <p className="text-xs text-prospere-gray-400">
-                    A venda será processada de forma segura e lastreada em nosso sistema.
+                    Sua carta será publicada na plataforma BidCon. Quando vendida, o lucro será creditado em sua conta.
                   </p>
                 </div>
               </div>

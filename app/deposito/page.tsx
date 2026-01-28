@@ -104,9 +104,9 @@ export default function DepositoPage() {
               <Wallet className="w-5 h-5 text-prospere-gold" />
             </div>
             <div>
-              <p className="text-prospere-gold font-semibold mb-1">Depósito Lastreado</p>
+              <p className="text-prospere-gold font-semibold mb-1">Como Funciona o Investimento</p>
               <p className="text-sm text-prospere-gray-300">
-                Seus depósitos são lastreados em cartas de consórcio contempladas, garantindo segurança e rentabilidade.
+                Seus recursos são utilizados para comprar cotas contempladas de outros clientes, que são vendidas na plataforma BidCon. Quando vendidas com lucro, o lucro retorna para você. Você também pode usar parte do capital para financiar lances de consórcio, recebendo uma taxa de empréstimo. Tudo lastreado em cartas de consórcio contempladas.
               </p>
             </div>
           </div>
