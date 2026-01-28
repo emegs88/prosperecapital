@@ -2,6 +2,7 @@
 
 import { Bell, User, Sun, Moon, ChevronDown, Plus, ArrowDownCircle } from 'lucide-react';
 import { mockInvestor } from '@/lib/mockData';
+import { getCurrentUser } from '@/lib/auth';
 import { useRouter, usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -13,6 +14,8 @@ export function Header() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   
   const isDepositPage = pathname?.includes('/deposito');
+  const currentUser = getCurrentUser();
+  const displayUser = currentUser || mockInvestor;
   
   return (
     <header className="h-16 bg-prospere-dark border-b border-prospere-gray-800 flex items-center justify-between px-4 lg:px-6 fixed top-0 right-0 left-0 lg:left-80 z-30">
@@ -48,8 +51,8 @@ export function Header() {
               <User className="w-4 h-4 text-white" />
             </div>
             <div className="hidden md:block text-left">
-              <p className="text-sm font-medium text-white">{mockInvestor.email}</p>
-              <p className="text-xs text-prospere-gray-500">{mockInvestor.name}</p>
+              <p className="text-sm font-medium text-white">{displayUser.email}</p>
+              <p className="text-xs text-prospere-gray-500">{'name' in displayUser ? displayUser.name : displayUser.email}</p>
             </div>
             <ChevronDown className="w-4 h-4 text-prospere-gray-400" />
           </button>
@@ -61,8 +64,8 @@ export function Header() {
               className="absolute right-0 mt-2 w-64 bg-prospere-gray-900 border border-prospere-gray-800 rounded-lg shadow-lg py-2"
             >
               <div className="px-4 py-2 border-b border-prospere-gray-800">
-                <p className="text-sm font-medium text-white">{mockInvestor.name}</p>
-                <p className="text-xs text-prospere-gray-400">{mockInvestor.email}</p>
+                <p className="text-sm font-medium text-white">{'name' in displayUser ? displayUser.name : displayUser.email}</p>
+                <p className="text-xs text-prospere-gray-400">{displayUser.email}</p>
               </div>
               <button className="w-full text-left px-4 py-2 text-sm text-prospere-gray-400 hover:bg-prospere-gray-800 hover:text-white">
                 Perfil

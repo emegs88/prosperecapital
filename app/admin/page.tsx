@@ -25,6 +25,7 @@ import {
   mockTransactions,
   mockPools 
 } from '@/lib/mockData';
+import { mockUsers, createUser, User } from '@/lib/auth';
 import { motion } from 'framer-motion';
 import { 
   LineChart, 
@@ -62,8 +63,15 @@ const mockBidConSales = [
 ];
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'investors' | 'investments' | 'cards' | 'sales' | 'dre'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'investors' | 'investments' | 'cards' | 'sales' | 'dre' | 'users'>('overview');
   const [searchTerm, setSearchTerm] = useState('');
+  const [showCreateUser, setShowCreateUser] = useState(false);
+  const [newUser, setNewUser] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'investor' as 'admin' | 'investor',
+  });
   
   // Calculate admin metrics
   const totalInvestors = mockInvestorsExtended.length;
@@ -104,6 +112,7 @@ export default function AdminPage() {
           { id: 'cards', label: 'Cartas' },
           { id: 'sales', label: 'Vendas BidCon' },
           { id: 'dre', label: 'DRE' },
+          { id: 'users', label: 'Usuários' },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -459,6 +468,116 @@ export default function AdminPage() {
                 Margem: {formatPercentage((dreData.profit / dreData.revenue.total) * 100)}
               </p>
             </div>
+          </div>
+        </Card>
+      )}
+      
+      {/* Users Tab */}
+      {activeTab === 'users' && (
+        <Card>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-white">Usuários do Sistema</h2>
+            <Button onClick={() => setShowCreateUser(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Criar Novo Usuário
+            </Button>
+          </div>
+          
+          {showCreateUser && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6 p-6 bg-prospere-gray-800 rounded-lg border border-prospere-gray-700"
+            >
+              <h3 className="text-lg font-bold text-white mb-4">Criar Novo Usuário</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Nome Completo"
+                  value={newUser.name}
+                  onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                  placeholder="Nome do usuário"
+                />
+                <Input
+                  label="E-mail"
+                  type="email"
+                  value={newUser.email}
+                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                  placeholder="email@exemplo.com"
+                />
+                <Input
+                  label="Senha"
+                  type="password"
+                  value={newUser.password}
+                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                  placeholder="Senha de acesso"
+                />
+                <Select
+                  label="Tipo de Usuário"
+                  value={newUser.role}
+                  onChange={(e) => setNewUser({ ...newUser, role: e.target.value as 'admin' | 'investor' })}
+                  options={[
+                    { value: 'investor', label: 'Investidor' },
+                    { value: 'admin', label: 'Administrador' },
+                  ]}
+                />
+              </div>
+              <div className="flex gap-2 mt-4">
+                <Button
+                  onClick={() => {
+                    if (newUser.name && newUser.email && newUser.password) {
+                      createUser(newUser);
+                      alert('Usuário criado com sucesso!');
+                      setNewUser({ name: '', email: '', password: '', role: 'investor' });
+                      setShowCreateUser(false);
+                    } else {
+                      alert('Preencha todos os campos');
+                    }
+                  }}
+                >
+                  Criar Usuário
+                </Button>
+                <Button variant="outline" onClick={() => setShowCreateUser(false)}>
+                  Cancelar
+                </Button>
+              </div>
+            </motion.div>
+          )}
+          
+          <div className="space-y-2">
+            {mockUsers.map((user) => (
+              <div
+                key={user.id}
+                className="p-4 bg-prospere-gray-800 rounded-lg border border-prospere-gray-700"
+              >
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="font-semibold text-white">{user.name}</p>
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        user.role === 'admin'
+                          ? 'bg-prospere-red/20 border border-prospere-red text-prospere-red'
+                          : 'bg-blue-900/30 border border-blue-800 text-blue-400'
+                      }`}>
+                        {user.role === 'admin' ? 'Admin' : 'Investidor'}
+                      </span>
+                    </div>
+                    <p className="text-sm text-prospere-gray-400">{user.email}</p>
+                    <p className="text-xs text-prospere-gray-500 mt-1">
+                      Criado em: {user.createdAt.toLocaleDateString('pt-BR')}
+                      {user.lastLogin && ` | Último acesso: ${user.lastLogin.toLocaleDateString('pt-BR')}`}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm">
+                      Editar
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      Resetar Senha
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </Card>
       )}
