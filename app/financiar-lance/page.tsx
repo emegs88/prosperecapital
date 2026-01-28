@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { 
-  HandCoins, 
+  Coins, 
   CreditCard,
   DollarSign,
   Calendar,
@@ -108,7 +108,7 @@ export default function FinanciarLancePage() {
             </div>
             
             <Button size="lg" className="w-full" disabled={!consorcioId || !valorLance}>
-              <HandCoins className="w-5 h-5 mr-2" />
+              <Coins className="w-5 h-5 mr-2" />
               Solicitar Financiamento
             </Button>
           </div>

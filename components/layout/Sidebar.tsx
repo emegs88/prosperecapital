@@ -20,7 +20,7 @@ import {
   User,
   CreditCard,
   ShoppingCart,
-  HandCoins
+  Coins
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -35,7 +35,7 @@ const menuItems = [
   { href: '/saque', label: 'Saques', icon: ArrowUpCircle, hasSubmenu: false },
   { href: '/consorcio', label: 'Consórcio', icon: CreditCard, hasSubmenu: true },
   { href: '/cartas', label: 'Cartas', icon: ShoppingCart, hasSubmenu: true },
-  { href: '/financiar-lance', label: 'Financiar Lance', icon: HandCoins },
+  { href: '/financiar-lance', label: 'Financiar Lance', icon: Coins },
   { href: '/resgate', label: 'Resgate', icon: ArrowLeftRight },
   { href: '/extrato', label: 'Extrato', icon: FileText },
   { href: '/pools', label: 'Pools', icon: Briefcase },
