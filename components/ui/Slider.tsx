@@ -1,7 +1,7 @@
 import { InputHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
-interface SliderProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
+interface SliderProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'onChange' | 'value'> {
   label?: string;
   value: number;
   onChange: (value: number) => void;
