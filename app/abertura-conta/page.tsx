@@ -19,6 +19,16 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  validateFileSize,
+  validateFileType,
+  validateCPF,
+  validateCEP,
+  extractDocumentData,
+  validateSelfie,
+  formatCPF,
+  formatCEP,
+} from '@/lib/documentValidation';
 
 interface DocumentFile {
   id: string;
@@ -27,6 +37,8 @@ interface DocumentFile {
   file: File;
   preview?: string;
   status: 'pending' | 'uploaded' | 'approved' | 'rejected';
+  validationErrors?: string[];
+  extractedData?: any;
 }
 
 export default function AberturaContaPage() {
@@ -42,18 +54,70 @@ export default function AberturaContaPage() {
   const [documents, setDocuments] = useState<DocumentFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [viewingDocument, setViewingDocument] = useState<DocumentFile | null>(null);
+  const [cpf, setCpf] = useState('');
+  const [cep, setCep] = useState('');
+  const [addressData, setAddressData] = useState<any>(null);
+  const [validatingDocument, setValidatingDocument] = useState<string | null>(null);
 
-  const handleFileUpload = (type: DocumentFile['type'], file: File) => {
-    const newDoc: DocumentFile = {
-      id: Date.now().toString(),
-      name: file.name,
-      type,
-      file,
-      preview: type === 'selfie' ? URL.createObjectURL(file) : undefined,
-      status: 'uploaded',
-    };
-    
-    setDocuments([...documents.filter(d => d.type !== type), newDoc]);
+  const handleFileUpload = async (type: DocumentFile['type'], file: File) => {
+    // Validações básicas
+    if (!validateFileSize(file, 5)) {
+      alert('Arquivo muito grande. Máximo 5MB permitido.');
+      return;
+    }
+
+    const allowedTypes = type === 'selfie' 
+      ? ['image/jpeg', 'image/jpg', 'image/png']
+      : ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+
+    if (!validateFileType(file, allowedTypes)) {
+      alert(`Formato inválido. ${type === 'selfie' ? 'Use JPG ou PNG.' : 'Use JPG, PNG ou PDF.'}`);
+      return;
+    }
+
+    setValidatingDocument(file.name);
+
+    try {
+      let validationErrors: string[] = [];
+      let extractedData: any = undefined;
+
+      // Validação específica por tipo
+      if (type === 'cnh' || type === 'rg') {
+        const result = await extractDocumentData(file);
+        validationErrors = result.errors;
+        extractedData = result.extractedData;
+      } else if (type === 'selfie') {
+        const cnhDoc = documents.find(d => d.type === 'cnh');
+        const result = await validateSelfie(file, cnhDoc?.file);
+        validationErrors = result.errors;
+      }
+
+      const newDoc: DocumentFile = {
+        id: Date.now().toString(),
+        name: file.name,
+        type,
+        file,
+        preview: type === 'selfie' || file.type.startsWith('image/') 
+          ? URL.createObjectURL(file) 
+          : undefined,
+        status: validationErrors.length === 0 ? 'uploaded' : 'rejected',
+        validationErrors: validationErrors.length > 0 ? validationErrors : undefined,
+        extractedData,
+      };
+      
+      setDocuments([...documents.filter(d => d.type !== type), newDoc]);
+      
+      if (validationErrors.length > 0) {
+        alert(`Erros encontrados:\n${validationErrors.join('\n')}`);
+      } else if (type === 'cnh' && extractedData) {
+        // Preencher dados automaticamente se extraídos
+        if (extractedData.cpf) setCpf(formatCPF(extractedData.cpf));
+      }
+    } catch (error) {
+      alert('Erro ao processar documento. Tente novamente.');
+    } finally {
+      setValidatingDocument(null);
+    }
   };
 
   const handleRemoveDocument = (id: string) => {
@@ -165,18 +229,108 @@ export default function AberturaContaPage() {
                 <Input
                   label="CPF"
                   type="text"
+                  value={cpf}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 11);
+                    setCpf(formatCPF(value));
+                  }}
                   placeholder="000.000.000-00"
                   maxLength={14}
                 />
+                {cpf && !validateCPF(cpf) && cpf.replace(/\D/g, '').length === 11 && (
+                  <p className="text-sm text-red-400 mt-1">CPF inválido</p>
+                )}
+                {cpf && validateCPF(cpf) && (
+                  <p className="text-sm text-green-400 mt-1 flex items-center gap-1">
+                    <CheckCircle2 className="w-4 h-4" />
+                    CPF válido
+                  </p>
+                )}
                 <Input
                   label="Data de Nascimento"
                   type="date"
                 />
-                <Input
-                  label="CEP"
-                  type="text"
-                  placeholder="00000-000"
-                />
+                <div className="md:col-span-2">
+                  <Input
+                    label="CEP"
+                    type="text"
+                    value={cep}
+                    onChange={async (e) => {
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 8);
+                      const formatted = formatCEP(value);
+                      setCep(formatted);
+                      
+                      if (value.length === 8) {
+                        const result = await validateCEP(value);
+                        if (result.isValid && result.address) {
+                          setAddressData(result.address);
+                        } else {
+                          setAddressData(null);
+                          if (result.error) {
+                            alert(result.error);
+                          }
+                        }
+                      } else {
+                        setAddressData(null);
+                      }
+                    }}
+                    placeholder="00000-000"
+                    maxLength={9}
+                  />
+                  {addressData && (
+                    <div className="mt-2 p-3 bg-green-900/20 border border-green-800 rounded-lg">
+                      <p className="text-sm text-green-400 font-medium mb-2 flex items-center gap-1">
+                        <CheckCircle2 className="w-4 h-4" />
+                        Endereço encontrado
+                      </p>
+                      <div className="grid grid-cols-2 gap-2 text-xs text-prospere-gray-300">
+                        <div><span className="text-prospere-gray-400">Rua:</span> {addressData.street}</div>
+                        <div><span className="text-prospere-gray-400">Bairro:</span> {addressData.neighborhood}</div>
+                        <div><span className="text-prospere-gray-400">Cidade:</span> {addressData.city}</div>
+                        <div><span className="text-prospere-gray-400">Estado:</span> {addressData.state}</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {addressData && (
+                  <>
+                    <Input
+                      label="Endereço (Rua/Avenida)"
+                      type="text"
+                      defaultValue={addressData.street}
+                      placeholder="Preenchido automaticamente"
+                    />
+                    <Input
+                      label="Número"
+                      type="text"
+                      placeholder="Número do endereço"
+                    />
+                    <Input
+                      label="Complemento"
+                      type="text"
+                      placeholder="Apto, Bloco, etc (opcional)"
+                    />
+                    <Input
+                      label="Bairro"
+                      type="text"
+                      defaultValue={addressData.neighborhood}
+                      placeholder="Preenchido automaticamente"
+                    />
+                    <Input
+                      label="Cidade"
+                      type="text"
+                      defaultValue={addressData.city}
+                      placeholder="Preenchido automaticamente"
+                    />
+                    <Input
+                      label="Estado"
+                      type="text"
+                      defaultValue={addressData.state}
+                      placeholder="Preenchido automaticamente"
+                      maxLength={2}
+                    />
+                  </>
+                )}
               </div>
 
               <div className="space-y-4">
@@ -580,11 +734,29 @@ function DocumentUpload({
             )}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-white truncate">{document.name}</p>
-              <p className="text-xs text-prospere-gray-400">
-                {document.status === 'uploaded' && 'Enviado'}
-                {document.status === 'approved' && 'Aprovado'}
-                {document.status === 'rejected' && 'Rejeitado'}
+              <p className={`text-xs ${
+                document.status === 'uploaded' ? 'text-green-400' :
+                document.status === 'approved' ? 'text-green-400' :
+                document.status === 'rejected' ? 'text-red-400' :
+                'text-prospere-gray-400'
+              }`}>
+                {document.status === 'uploaded' && '✓ Enviado e validado'}
+                {document.status === 'approved' && '✓ Aprovado'}
+                {document.status === 'rejected' && '✗ Rejeitado'}
+                {document.status === 'pending' && 'Pendente'}
               </p>
+              {document.validationErrors && document.validationErrors.length > 0 && (
+                <div className="mt-1">
+                  {document.validationErrors.map((error, idx) => (
+                    <p key={idx} className="text-xs text-red-400">• {error}</p>
+                  ))}
+                </div>
+              )}
+              {document.extractedData && (
+                <p className="text-xs text-green-400 mt-1">
+                  Dados extraídos automaticamente
+                </p>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -645,9 +817,18 @@ function DocumentUpload({
               JPG, PNG ou PDF (máx. 5MB)
             </p>
           </div>
-          <Button variant="outline" size="sm">
-            <Upload className="w-4 h-4 mr-2" />
-            Selecionar Arquivo
+          <Button variant="outline" size="sm" disabled={validatingDocument !== null}>
+            {validatingDocument ? (
+              <>
+                <div className="w-4 h-4 border-2 border-prospere-gray-400 border-t-transparent rounded-full animate-spin mr-2" />
+                Validando...
+              </>
+            ) : (
+              <>
+                <Upload className="w-4 h-4 mr-2" />
+                Selecionar Arquivo
+              </>
+            )}
           </Button>
         </div>
       </label>
