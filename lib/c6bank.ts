@@ -4,6 +4,8 @@
  * Base URL: baas-api-sandbox.c6bank.info (sandbox) | baas-api.c6bank.info (production)
  */
 
+import { companyData } from './companyData';
+
 interface C6BankConfig {
   clientId: string;
   clientSecret: string;
@@ -80,9 +82,6 @@ interface C6TokenResponse {
   token_type: string;
   expires_in: number;
 }
-
-// Importar chave PIX da empresa
-import { companyData } from './companyData';
 
 // Configuração padrão (será sobrescrita por variáveis de ambiente)
 let c6Config: C6BankConfig = {
