@@ -39,6 +39,7 @@ const menuItems = [
   { href: '/resgate', label: 'Resgate', icon: ArrowLeftRight },
   { href: '/extrato', label: 'Extrato', icon: FileText },
   { href: '/pools', label: 'Pools', icon: Briefcase },
+  { href: '/termos-de-uso', label: 'Termos de Uso', icon: FileText },
   { href: '/admin', label: 'Admin', icon: Settings },
 ];
 

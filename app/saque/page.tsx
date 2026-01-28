@@ -13,6 +13,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/calculations';
+import { companyData } from '@/lib/companyData';
 import { mockInvestments, mockTransactions } from '@/lib/mockData';
 
 export default function SaquePage() {
