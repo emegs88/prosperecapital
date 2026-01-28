@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -495,11 +496,15 @@ export default function AberturaContaPage() {
                     title={viewingDocument.name}
                   />
                 ) : (
-                  <img
-                    src={viewingDocument.preview || URL.createObjectURL(viewingDocument.file)}
-                    alt={viewingDocument.name}
-                    className="w-full h-auto rounded-lg"
-                  />
+                  <div className="relative w-full h-[70vh]">
+                    <Image
+                      src={viewingDocument.preview || URL.createObjectURL(viewingDocument.file)}
+                      alt={viewingDocument.name}
+                      fill
+                      className="object-contain rounded-lg"
+                      unoptimized
+                    />
+                  </div>
                 )}
               </div>
             </motion.div>
@@ -555,11 +560,15 @@ function DocumentUpload({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 flex-1">
             {isImage && document.preview ? (
-              <img
-                src={document.preview}
-                alt={document.name}
-                className="w-16 h-16 object-cover rounded-lg"
-              />
+              <div className="relative w-16 h-16">
+                <Image
+                  src={document.preview}
+                  alt={document.name}
+                  fill
+                  className="object-cover rounded-lg"
+                  unoptimized
+                />
+              </div>
             ) : document.file.type === 'application/pdf' ? (
               <div className="w-16 h-16 bg-red-900/30 rounded-lg flex items-center justify-center border border-red-800">
                 <FileText className="w-8 h-8 text-red-400" />
