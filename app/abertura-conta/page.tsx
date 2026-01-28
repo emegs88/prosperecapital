@@ -500,6 +500,7 @@ export default function AberturaContaPage() {
                     document={documents.find(d => d.type === 'cnh')}
                     onRemove={handleRemoveDocument}
                     onView={setViewingDocument}
+                    isValidating={validatingDocument !== null}
                   />
                 </div>
 
@@ -516,6 +517,7 @@ export default function AberturaContaPage() {
                     document={documents.find(d => d.type === 'rg')}
                     onRemove={handleRemoveDocument}
                     onView={setViewingDocument}
+                    isValidating={validatingDocument !== null}
                   />
                 </div>
 
@@ -532,6 +534,7 @@ export default function AberturaContaPage() {
                     document={documents.find(d => d.type === 'comprovante')}
                     onRemove={handleRemoveDocument}
                     onView={setViewingDocument}
+                    isValidating={validatingDocument !== null}
                   />
                 </div>
 
@@ -549,6 +552,7 @@ export default function AberturaContaPage() {
                     onRemove={handleRemoveDocument}
                     isImage={true}
                     onView={setViewingDocument}
+                    isValidating={validatingDocument !== null}
                   />
                 </div>
               </div>
@@ -678,6 +682,7 @@ interface DocumentUploadProps {
   onRemove: (id: string) => void;
   isImage?: boolean;
   onView?: (document: DocumentFile) => void;
+  isValidating?: boolean;
 }
 
 function DocumentUpload({
@@ -689,6 +694,7 @@ function DocumentUpload({
   onRemove,
   isImage = false,
   onView,
+  isValidating = false,
 }: DocumentUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
 
@@ -817,8 +823,8 @@ function DocumentUpload({
               JPG, PNG ou PDF (máx. 5MB)
             </p>
           </div>
-          <Button variant="outline" size="sm" disabled={validatingDocument !== null}>
-            {validatingDocument ? (
+          <Button variant="outline" size="sm" disabled={isValidating}>
+            {isValidating ? (
               <>
                 <div className="w-4 h-4 border-2 border-prospere-gray-400 border-t-transparent rounded-full animate-spin mr-2" />
                 Validando...
