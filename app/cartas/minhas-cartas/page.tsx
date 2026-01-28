@@ -24,15 +24,16 @@ interface MinhaCarta {
   lastreada: boolean;
 }
 
-const minhasCartas: MinhaCarta[] = [
+// Usar strings para datas e converter quando necessário
+const minhasCartasData = [
   {
     id: 'CART-004',
     tipo: 'Imóvel',
     grupo: '11111',
     cota: '999',
     valor: 350000,
-    status: 'contemplada',
-    dataAquisicao: new Date('2023-01-15'),
+    status: 'contemplada' as const,
+    dataAquisicao: '2023-01-15',
     lastreada: true,
   },
   {
@@ -41,8 +42,8 @@ const minhasCartas: MinhaCarta[] = [
     grupo: '22222',
     cota: '888',
     valor: 90000,
-    status: 'nao_contemplada',
-    dataAquisicao: new Date('2023-03-20'),
+    status: 'nao_contemplada' as const,
+    dataAquisicao: '2023-03-20',
     lastreada: true,
   },
   {
@@ -51,11 +52,16 @@ const minhasCartas: MinhaCarta[] = [
     grupo: '33333',
     cota: '777',
     valor: 280000,
-    status: 'contemplada',
-    dataAquisicao: new Date('2023-05-10'),
+    status: 'contemplada' as const,
+    dataAquisicao: '2023-05-10',
     lastreada: true,
   },
 ];
+
+const minhasCartas: MinhaCarta[] = minhasCartasData.map(carta => ({
+  ...carta,
+  dataAquisicao: new Date(carta.dataAquisicao),
+}));
 
 export default function MinhasCartasPage() {
   const totalInvestido = minhasCartas.reduce((sum, c) => sum + c.valor, 0);

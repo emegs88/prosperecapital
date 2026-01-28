@@ -27,7 +27,7 @@ interface Consorcio {
   contemplacao?: Date;
 }
 
-const mockConsorcios: Consorcio[] = [
+const mockConsorciosData = [
   {
     id: 'CONS-001',
     tipo: 'Imóvel',
@@ -37,7 +37,7 @@ const mockConsorcios: Consorcio[] = [
     valorParcela: 1500,
     parcelasPagas: 24,
     parcelasTotal: 200,
-    status: 'ativo',
+    status: 'ativo' as const,
   },
   {
     id: 'CONS-002',
@@ -48,10 +48,15 @@ const mockConsorcios: Consorcio[] = [
     valorParcela: 800,
     parcelasPagas: 12,
     parcelasTotal: 100,
-    status: 'contemplado',
-    contemplacao: new Date('2023-06-15'),
+    status: 'contemplado' as const,
+    contemplacao: '2023-06-15',
   },
 ];
+
+const mockConsorcios: Consorcio[] = mockConsorciosData.map(consorcio => ({
+  ...consorcio,
+  contemplacao: consorcio.contemplacao ? new Date(consorcio.contemplacao) : undefined,
+}));
 
 export default function ConsorcioPage() {
   const totalInvestido = mockConsorcios.reduce((sum, c) => sum + (c.valorParcela * c.parcelasPagas), 0);
