@@ -25,8 +25,8 @@ export default function DepositoPage() {
   const [paymentMethod, setPaymentMethod] = useState('pix');
   const [pixData, setPixData] = useState<{
     qrCode?: string;
-    qrCodeImage?: string;
     transactionId?: string;
+    location?: string;
     expiresAt?: string;
   } | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -274,7 +274,6 @@ export default function DepositoPage() {
             description={`Depósito Prospere Capital`}
             transactionId={pixData.transactionId}
             qrCode={pixData.qrCode}
-            qrCodeImage={pixData.qrCodeImage}
             expiresAt={pixData.expiresAt}
             onRefresh={handleRefreshPix}
             onPaymentConfirmed={handlePaymentConfirmed}

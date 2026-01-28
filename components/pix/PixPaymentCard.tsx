@@ -26,7 +26,6 @@ export function PixPaymentCard({
   description = 'Depósito Prospere Capital',
   transactionId,
   qrCode,
-  qrCodeImage,
   expiresAt,
   onRefresh,
   onPaymentConfirmed,
@@ -45,7 +44,7 @@ export function PixPaymentCard({
         
         setIsChecking(true);
         try {
-          const response = await fetch(`/api/pix/check?transactionId=${transactionId}`);
+          const response = await fetch(`/api/pix/check?txid=${transactionId}`);
           const data = await response.json();
           
           if (data.success && data.data) {
@@ -137,15 +136,15 @@ export function PixPaymentCard({
 
         {/* QR Code */}
         <div className="flex justify-center mb-6">
-          {qrCodeImage ? (
+          {qrCode ? (
             <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
-              <Image
-                src={qrCodeImage}
-                alt="QR Code PIX"
-                width={200}
-                height={200}
-                className="w-48 h-48"
-              />
+              {/* Em produção, usar biblioteca para gerar QR Code visual */}
+              <div className="w-48 h-48 bg-gray-50 rounded flex items-center justify-center">
+                <QrCode className="w-32 h-32 text-gray-600" />
+              </div>
+              <p className="text-xs text-gray-500 mt-2 text-center">
+                Use o código abaixo para pagar
+              </p>
             </div>
           ) : (
             <div className="w-48 h-48 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-gray-200">

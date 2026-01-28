@@ -3,21 +3,21 @@ import { checkPixPayment } from '@/lib/c6bank';
 
 /**
  * API Route para verificar status de pagamento PIX
- * GET /api/pix/check?transactionId=xxx
+ * GET /api/pix/check?txid=xxx
  */
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const transactionId = searchParams.get('transactionId');
+    const txid = searchParams.get('txid') || searchParams.get('transactionId');
 
-    if (!transactionId) {
+    if (!txid) {
       return NextResponse.json(
-        { error: 'transactionId é obrigatório' },
+        { error: 'txid é obrigatório' },
         { status: 400 }
       );
     }
 
-    const status = await checkPixPayment(transactionId);
+    const status = await checkPixPayment(txid);
 
     if (!status) {
       return NextResponse.json(

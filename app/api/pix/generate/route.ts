@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generatePixQrCode, createPixKey } from '@/lib/c6bank';
+import { generatePixQrCode } from '@/lib/c6bank';
 
 /**
  * API Route para gerar QR Code PIX dinâmico
@@ -26,12 +26,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Gerar QR Code PIX
-    const qrCode = await generatePixQrCode({
-      amount: parseFloat(amount),
+    const qrCode = await generatePixQrCode(
+      parseFloat(amount),
       description,
       payerName,
-      payerDocument,
-    });
+      payerDocument
+    );
 
     if (!qrCode) {
       return NextResponse.json(
@@ -44,9 +44,11 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         qrCode: qrCode.qrCode,
-        qrCodeImage: qrCode.qrCodeImage,
-        transactionId: qrCode.transactionId,
+        transactionId: qrCode.txid,
+        location: qrCode.location,
         expiresAt: qrCode.expiresAt,
+        // Para gerar imagem do QR Code, usar biblioteca como qrcode
+        // qrCodeImage: await generateQRCodeImage(qrCode.qrCode),
       },
     });
   } catch (error) {
@@ -58,32 +60,3 @@ export async function POST(request: NextRequest) {
   }
 }
 
-/**
- * GET /api/pix/generate - Criar nova chave PIX
- */
-export async function GET(request: NextRequest) {
-  try {
-    const searchParams = request.nextUrl.searchParams;
-    const keyType = (searchParams.get('type') as 'CPF' | 'CNPJ' | 'EMAIL' | 'PHONE' | 'RANDOM') || 'RANDOM';
-
-    const pixKey = await createPixKey(keyType);
-
-    if (!pixKey) {
-      return NextResponse.json(
-        { error: 'Erro ao criar chave PIX. Verifique as credenciais da API C6 Bank.' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: pixKey,
-    });
-  } catch (error) {
-    console.error('Erro ao criar chave PIX:', error);
-    return NextResponse.json(
-      { error: 'Erro interno do servidor' },
-      { status: 500 }
-    );
-  }
-}

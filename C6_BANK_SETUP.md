@@ -46,7 +46,7 @@ Na raiz do projeto, crie o arquivo `.env.local`:
 NEXT_PUBLIC_C6_CLIENT_ID=seu_client_id_aqui
 C6_CLIENT_SECRET=seu_client_secret_aqui
 NEXT_PUBLIC_C6_ENVIRONMENT=sandbox
-C6_ACCOUNT_ID=seu_account_id_aqui
+C6_PIX_KEY=prosperity.participacoes@gmail.com
 ```
 
 **⚠️ IMPORTANTE:**
@@ -68,7 +68,7 @@ Configure nas variáveis de ambiente da plataforma:
 - `NEXT_PUBLIC_C6_CLIENT_ID`
 - `C6_CLIENT_SECRET`
 - `NEXT_PUBLIC_C6_ENVIRONMENT=production`
-- `C6_ACCOUNT_ID`
+- `C6_PIX_KEY` (chave PIX da empresa)
 
 ---
 
@@ -89,33 +89,38 @@ Configure nas variáveis de ambiente da plataforma:
 
 ## 📝 Uso da API
 
-### Exemplo: Gerar Chave PIX
+### Exemplo: Gerar QR Code PIX
 
 ```typescript
-import { createPixKey, generatePixQrCode } from '@/lib/c6bank';
+import { generatePixQrCode } from '@/lib/c6bank';
 
-// Criar chave PIX aleatória
-const pixKey = await createPixKey('RANDOM');
-console.log('Chave PIX:', pixKey?.key);
+// Gerar QR Code para pagamento (Cobrança Imediata)
+const qrCode = await generatePixQrCode(
+  1000.00, // Valor
+  'Depósito Prospere Capital', // Descrição
+  'João Silva', // Nome do pagador (opcional)
+  '123.456.789-00' // CPF/CNPJ (opcional)
+);
 
-// Gerar QR Code para pagamento
-const qrCode = await generatePixQrCode({
-  amount: 1000.00,
-  description: 'Depósito Prospere Capital',
-  payerName: 'João Silva',
-  payerDocument: '123.456.789-00',
-});
+console.log('QR Code:', qrCode?.qrCode);
+console.log('TXID:', qrCode?.txid);
 ```
 
 ### Exemplo: Consultar Pagamento
 
 ```typescript
-import { checkPixPayment } from '@/lib/c6bank';
+import { checkPixPayment, getPixCob } from '@/lib/c6bank';
 
-const status = await checkPixPayment('transaction-id');
+// Consultar status via txid
+const status = await checkPixPayment('txid-da-cobranca');
 if (status?.status === 'paid') {
   console.log('Pagamento confirmado!');
 }
+
+// Ou consultar cobrança completa
+const cob = await getPixCob('txid-da-cobranca');
+console.log('Status:', cob?.status);
+console.log('QR Code:', cob?.pixCopiaECola);
 ```
 
 ---
@@ -133,7 +138,13 @@ O ambiente sandbox permite testar sem movimentar dinheiro real:
 ## 📚 Documentação Oficial
 
 - **Portal de Desenvolvedores**: https://developers.c6bank.com.br/
-- **Documentação API PIX**: https://developers.c6bank.com.br/docs/pix
+- **API Base URLs:**
+  - Sandbox: `https://baas-api-sandbox.c6bank.info`
+  - Produção: `https://baas-api.c6bank.info`
+- **Endpoints principais:**
+  - Criar cobrança: `PUT /v2/pix/cob/{{txid}}` ou `POST /v2/pix/cob/`
+  - Consultar cobrança: `GET /v2/pix/cob/{{txid}}`
+  - Configurar webhook: `PUT /v2/pix/webhook/{{chave_pix}}`
 - **Suporte**: suporte@c6bank.com.br
 
 ---
@@ -150,12 +161,23 @@ O ambiente sandbox permite testar sem movimentar dinheiro real:
 
 ## 🔄 Webhook para Notificações
 
-Para receber notificações de pagamento em tempo real, configure um webhook:
+Para receber notificações de pagamento em tempo real:
 
-1. No portal C6 Bank, configure a URL do webhook
-2. Crie uma rota API em `/app/api/c6/webhook/route.ts`
-3. Valide a assinatura da requisição
-4. Atualize o status do pagamento no banco de dados
+1. **Configurar Webhook via API:**
+```typescript
+import { setWebhook } from '@/lib/c6bank';
+
+await setWebhook(
+  'https://seu-dominio.com/api/pix/webhook',
+  'sua-chave-pix'
+);
+```
+
+2. **Webhook já implementado:**
+   - Rota: `POST /api/pix/webhook`
+   - Processa eventos: `pix.payment.received`, `pix.payment.expired`, `pix.payment.cancelled`
+   - Valida assinatura (implementar conforme documentação C6 Bank)
+   - Atualiza status no banco de dados
 
 ---
 
