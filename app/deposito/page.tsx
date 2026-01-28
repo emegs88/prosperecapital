@@ -16,6 +16,7 @@ import {
   Clock
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/calculations';
+import { companyData } from '@/lib/companyData';
 import { motion } from 'framer-motion';
 
 export default function DepositoPage() {
@@ -117,10 +118,24 @@ export default function DepositoPage() {
             
             <div className="p-6 bg-prospere-gray-800 rounded-lg border border-prospere-gray-700 space-y-4">
               <div>
-                <p className="text-xs text-prospere-gray-400 mb-1">Chave PIX</p>
+                <p className="text-xs text-prospere-gray-400 mb-1">Razão Social</p>
+                <p className="text-white font-medium">{companyData.razaoSocial}</p>
+              </div>
+              
+              <div>
+                <p className="text-xs text-prospere-gray-400 mb-1">CNPJ</p>
+                <p className="text-white font-medium">{companyData.cnpj}</p>
+              </div>
+              
+              <div>
+                <p className="text-xs text-prospere-gray-400 mb-1">Chave PIX (E-mail)</p>
                 <div className="flex items-center gap-2">
-                  <p className="text-white font-mono text-sm">prospere@capital.com.br</p>
-                  <button className="p-1 hover:bg-prospere-gray-700 rounded">
+                  <p className="text-white font-mono text-sm">{companyData.pix.chave}</p>
+                  <button 
+                    className="p-1 hover:bg-prospere-gray-700 rounded"
+                    onClick={() => navigator.clipboard.writeText(companyData.pix.chave)}
+                    title="Copiar chave PIX"
+                  >
                     <QrCode className="w-4 h-4 text-prospere-gray-400" />
                   </button>
                 </div>
@@ -128,17 +143,33 @@ export default function DepositoPage() {
               
               <div>
                 <p className="text-xs text-prospere-gray-400 mb-1">Banco</p>
-                <p className="text-white font-medium">Prospere Capital</p>
+                <p className="text-white font-medium">{companyData.banco.nome}</p>
               </div>
               
               <div>
                 <p className="text-xs text-prospere-gray-400 mb-1">Agência</p>
-                <p className="text-white font-medium">0001</p>
+                <p className="text-white font-medium">{companyData.banco.agencia}</p>
               </div>
               
               <div>
                 <p className="text-xs text-prospere-gray-400 mb-1">Conta</p>
-                <p className="text-white font-medium">12345-6</p>
+                <p className="text-white font-medium">{companyData.banco.conta}</p>
+              </div>
+              
+              <div>
+                <p className="text-xs text-prospere-gray-400 mb-1">Telefone</p>
+                <p className="text-white font-medium">{companyData.telefone}</p>
+              </div>
+              
+              <div className="pt-2 border-t border-prospere-gray-700">
+                <p className="text-xs text-prospere-gray-400 mb-1">Endereço</p>
+                <p className="text-white text-sm">
+                  {companyData.endereco.logradouro}, {companyData.endereco.numero} - {companyData.endereco.complemento}
+                </p>
+                <p className="text-white text-sm">
+                  {companyData.endereco.bairro} - {companyData.endereco.cidade}/{companyData.endereco.uf}
+                </p>
+                <p className="text-white text-sm">CEP: {companyData.endereco.cep}</p>
               </div>
               
               <div className="pt-4 border-t border-prospere-gray-700">
