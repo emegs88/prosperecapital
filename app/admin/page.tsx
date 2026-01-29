@@ -1671,10 +1671,10 @@ export default function AdminPage() {
                 {/* Overlay com instruções */}
                 <div className="absolute bottom-20 left-0 right-0 text-center">
                   <p className="text-white text-lg font-medium mb-2">
-                    Segure sua CNH ou RG visível na foto
+                    Tire uma selfie
                   </p>
                   <p className="text-white/80 text-sm">
-                    Posicione seu rosto e o documento no centro
+                    Posicione seu rosto no centro da tela
                   </p>
                 </div>
               </div>
@@ -1746,10 +1746,10 @@ export default function AdminPage() {
                 {/* Overlay com instruções */}
                 <div className="absolute bottom-20 left-0 right-0 text-center">
                   <p className="text-white text-lg font-medium mb-2">
-                    Segure sua CNH ou RG visível na foto
+                    Tire uma selfie
                   </p>
                   <p className="text-white/80 text-sm">
-                    Posicione seu rosto e o documento no centro
+                    Posicione seu rosto no centro da tela
                   </p>
                 </div>
               </div>
