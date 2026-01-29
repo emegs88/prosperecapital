@@ -23,22 +23,29 @@ export async function POST(request: NextRequest) {
     // - Por WhatsApp: usando API como Twilio, WhatsApp Business API, etc.
     
     // Por enquanto, simulamos o envio
-    console.log(`📧 Código de verificação ${type === 'email' ? 'por email' : 'por WhatsApp'}:`);
-    console.log(`${type === 'email' ? `Email: ${email}` : `WhatsApp: ${phone}`}`);
-    console.log(`Código: ${code}`);
+    // Em produção, aqui você enviaria o código:
+    // - Por email: usando serviço como SendGrid, AWS SES, Resend, etc.
+    // - Por WhatsApp: usando API como Twilio, WhatsApp Business API, etc.
+    
+    console.log(`\n📧 ============================================`);
+    console.log(`📧 Código de Verificação ${type === 'email' ? 'Email' : 'WhatsApp'}`);
+    console.log(`📧 ============================================`);
+    console.log(`${type === 'email' ? `📧 Email: ${email}` : `📱 WhatsApp: ${phone}`}`);
+    console.log(`🔐 Código: ${code}`);
+    console.log(`⏰ Válido por: 10 minutos`);
+    console.log(`📧 ============================================\n`);
 
     // Simular delay de envio
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
     // Em produção, salvaria o código no banco de dados com expiração (ex: 10 minutos)
-    // Por enquanto, retornamos o código (em produção, NÃO retornar o código)
-    // Apenas para desenvolvimento/teste, retornamos o código
-    const isDevelopment = process.env.NODE_ENV === 'development';
+    // Por enquanto, retornamos o código apenas em desenvolvimento para facilitar testes
+    const isDevelopment = process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production';
 
     return NextResponse.json({
       success: true,
       message: `Código enviado ${type === 'email' ? 'por email' : 'por WhatsApp'}`,
-      // Apenas em desenvolvimento retornamos o código
+      // Apenas em desenvolvimento retornamos o código (para facilitar testes)
       ...(isDevelopment && { code }),
       expiresIn: 600, // 10 minutos
     });
