@@ -27,33 +27,55 @@ import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { formatCurrency } from '@/lib/calculations';
 import { mockInvestments, mockTransactions } from '@/lib/mockData';
+import { getCurrentUser, isAdmin } from '@/lib/auth';
 
-const menuItems = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/abertura-conta', label: 'Abertura de Conta', icon: User },
-  { href: '/deposito', label: 'Depósitos', icon: ArrowDownCircle, hasSubmenu: true },
-  { href: '/saque', label: 'Saques', icon: ArrowUpCircle, hasSubmenu: false },
-  { href: '/consorcio', label: 'Consórcio', icon: CreditCard, hasSubmenu: true },
-  { href: '/cartas', label: 'Cartas', icon: ShoppingCart, hasSubmenu: true },
-  { href: '/financiar-lance', label: 'Financiar Lance', icon: Coins },
-  { href: '/resgate', label: 'Resgate', icon: ArrowLeftRight },
-  { href: '/extrato', label: 'Extrato', icon: FileText },
-  { href: '/pools', label: 'Pools', icon: Briefcase },
-  { href: '/termos-de-uso', label: 'Termos de Uso', icon: FileText },
-  { href: '/admin', label: 'Admin', icon: Settings },
-];
+const getMenuItems = (isAdmin: boolean) => {
+  const baseItems = [
+    { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/abertura-conta', label: 'Abertura de Conta', icon: User },
+    { href: '/deposito', label: 'Depósitos', icon: ArrowDownCircle, hasSubmenu: true },
+    { href: '/saque', label: 'Saques', icon: ArrowUpCircle, hasSubmenu: false },
+    { href: '/consorcio', label: 'Consórcio', icon: CreditCard, hasSubmenu: true },
+    { href: '/cartas', label: 'Cartas', icon: ShoppingCart, hasSubmenu: true },
+    { href: '/financiar-lance', label: 'Financiar Lance', icon: Coins },
+    { href: '/resgate', label: 'Resgate', icon: ArrowLeftRight },
+    { href: '/extrato', label: 'Extrato', icon: FileText },
+    { href: '/pools', label: 'Pools', icon: Briefcase },
+    { href: '/termos-de-uso', label: 'Termos de Uso', icon: FileText },
+  ];
+  
+  if (isAdmin) {
+    baseItems.push({ href: '/admin', label: 'Admin', icon: Settings });
+  }
+  
+  return baseItems;
+};
 
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const currentUser = getCurrentUser();
+  const userIsAdmin = isAdmin();
+  const userId = currentUser?.id || '1';
   const [expandedMenus, setExpandedMenus] = useState<string[]>(['deposito']);
   
+  // Filtrar investimentos e transações baseado no role
+  const userInvestments = userIsAdmin 
+    ? mockInvestments 
+    : mockInvestments.filter(inv => inv.investorId === userId);
+  
+  const userTransactions = userIsAdmin
+    ? mockTransactions
+    : mockTransactions.filter(tx => tx.investorId === userId);
+  
   // Calculate available balance
-  const totalInvested = mockInvestments.reduce((sum, inv) => sum + inv.amount, 0);
-  const totalProfit = mockTransactions
+  const totalInvested = userInvestments.reduce((sum, inv) => sum + inv.amount, 0);
+  const totalProfit = userTransactions
     .filter(tx => tx.type === 'base_return' || tx.type === 'performance_return')
     .reduce((sum, tx) => sum + tx.amount, 0);
   const availableBalance = totalInvested + totalProfit;
+  
+  const menuItems = getMenuItems(userIsAdmin);
   
   const toggleMenu = (menu: string) => {
     setExpandedMenus(prev => 

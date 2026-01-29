@@ -14,19 +14,27 @@ import {
   TrendingUp,
   RefreshCw
 } from 'lucide-react';
-import { mockTransactions } from '@/lib/mockData';
+import { mockTransactions, mockInvestments } from '@/lib/mockData';
 import { formatCurrency, formatDate } from '@/lib/calculations';
+import { getCurrentUser, isAdmin } from '@/lib/auth';
 import { Transaction } from '@/types';
 import { motion } from 'framer-motion';
 
 export default function ExtratoPage() {
+  const currentUser = getCurrentUser();
+  const userIsAdmin = isAdmin();
+  const userId = currentUser?.id || '1';
+  
   const [filterType, setFilterType] = useState<string>('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   
   const filteredTransactions = useMemo(() => {
-    let filtered = [...mockTransactions];
+    // Filtrar transações baseado no role
+    let filtered = userIsAdmin 
+      ? [...mockTransactions]
+      : mockTransactions.filter(tx => tx.investorId === userId);
     
     // Filter by type
     if (filterType !== 'all') {
@@ -56,7 +64,7 @@ export default function ExtratoPage() {
     
     // Sort by date (newest first)
     return filtered.sort((a, b) => b.date.getTime() - a.date.getTime());
-  }, [filterType, startDate, endDate, searchTerm]);
+  }, [filterType, startDate, endDate, searchTerm, userIsAdmin, userId]);
   
   const getTransactionIcon = (type: string) => {
     switch (type) {

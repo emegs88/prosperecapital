@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { TrendingUp, Mail, Lock, AlertCircle } from 'lucide-react';
-import { verifyLogin } from '@/lib/auth';
+import { verifyLogin, setCurrentUser } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 
@@ -27,8 +27,7 @@ export default function LoginPage() {
     const user = verifyLogin(email, password);
     
     if (user) {
-      // Em produção, salvaria token/session
-      localStorage.setItem('user', JSON.stringify(user));
+      setCurrentUser(user);
       router.push('/');
     } else {
       setError('Email ou senha incorretos');

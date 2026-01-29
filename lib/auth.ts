@@ -61,9 +61,56 @@ export function createUser(userData: Omit<User, 'id' | 'createdAt'>): User {
 }
 
 /**
- * Verifica se usuário está autenticado (simulado)
+ * Verifica se usuário está autenticado
  */
 export function getCurrentUser(): User | null {
-  // Em produção, viria de session/cookie
-  return mockUsers.find(u => u.email === 'emerson@prospere.com.br') || null;
+  if (typeof window === 'undefined') return null;
+  
+  try {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      // Buscar dados atualizados do mockUsers
+      const fullUser = mockUsers.find(u => u.id === user.id || u.email === user.email);
+      return fullUser || user;
+    }
+  } catch (error) {
+    console.error('Erro ao ler usuário do localStorage:', error);
+  }
+  
+  return null;
+}
+
+/**
+ * Salva usuário no localStorage
+ */
+export function setCurrentUser(user: User): void {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    localStorage.setItem('user', JSON.stringify({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    }));
+  } catch (error) {
+    console.error('Erro ao salvar usuário no localStorage:', error);
+  }
+}
+
+/**
+ * Verifica se o usuário atual é admin
+ */
+export function isAdmin(): boolean {
+  const user = getCurrentUser();
+  return user?.role === 'admin';
+}
+
+/**
+ * Verifica se o usuário atual é investidor
+ */
+export function isInvestor(): boolean {
+  const user = getCurrentUser();
+  return user?.role === 'investor';
 }

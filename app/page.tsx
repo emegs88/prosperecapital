@@ -35,23 +35,44 @@ import {
   calculateInvestmentCurrentValue
 } from '@/lib/mockData';
 import { formatCurrency, formatPercentage } from '@/lib/calculations';
+import { getCurrentUser, isAdmin } from '@/lib/auth';
 import { useMemo } from 'react';
 
 const COLORS = ['#DC2626', '#D4AF37', '#6B7280', '#374151'];
 
 export default function Dashboard() {
+  const currentUser = getCurrentUser();
+  const userIsAdmin = isAdmin();
+  const userId = currentUser?.id || '1'; // Default para investidor ID 1 se não logado
+  
+  // Filtrar dados baseado no role
+  const userInvestments = useMemo(() => {
+    if (userIsAdmin) return mockInvestments;
+    return mockInvestments.filter(inv => inv.investorId === userId);
+  }, [userIsAdmin, userId]);
+  
+  const userTransactions = useMemo(() => {
+    if (userIsAdmin) return mockTransactions;
+    return mockTransactions.filter(tx => tx.investorId === userId);
+  }, [userIsAdmin, userId]);
+  
+  const userWithdrawals = useMemo(() => {
+    if (userIsAdmin) return mockWithdrawals;
+    return mockWithdrawals.filter(w => w.investorId === userId);
+  }, [userIsAdmin, userId]);
+  
   const monthlyData = useMemo(() => generateMonthlyData(12), []);
   const portfolioEvolution = useMemo(() => generatePortfolioEvolution(12), []);
   const comparisonData = useMemo(() => generateInvestmentComparison(12), []);
   
-  // Calculate metrics
-  const totalInvested = mockInvestments.reduce((sum, inv) => sum + inv.amount, 0);
-  const totalProfit = mockTransactions
+  // Calculate metrics baseado nos dados filtrados
+  const totalInvested = userInvestments.reduce((sum, inv) => sum + inv.amount, 0);
+  const totalProfit = userTransactions
     .filter(tx => tx.type === 'base_return' || tx.type === 'performance_return')
     .reduce((sum, tx) => sum + tx.amount, 0);
   
   // Calculate current value including retroactive investments with monthly returns
-  const totalCurrentValue = mockInvestments.reduce((sum, inv) => {
+  const totalCurrentValue = userInvestments.reduce((sum, inv) => {
     return sum + calculateInvestmentCurrentValue(inv);
   }, 0);
   
@@ -60,10 +81,10 @@ export default function Dashboard() {
   const averageReturn = totalInvested > 0 ? (totalProfitWithReturns / totalInvested) * 100 : 0;
   const monthlyReturn = averageReturn / 12;
   
-  const availableBalance = totalInOperation - mockWithdrawals
+  const availableBalance = totalInOperation - userWithdrawals
     .filter(w => w.status === 'pending' || w.status === 'in_liquidation')
     .reduce((sum, w) => sum + w.amount, 0);
-  const inWithdrawalBalance = mockWithdrawals
+  const inWithdrawalBalance = userWithdrawals
     .filter(w => w.status === 'pending' || w.status === 'in_liquidation')
     .reduce((sum, w) => sum + w.amount, 0);
   const blockedBalance = 0; // Can be calculated based on business logic
@@ -94,13 +115,19 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Dashboard</h1>
-        <p className="text-prospere-gray-400">Visão geral do seu patrimônio</p>
-        <div className="mt-4 p-4 bg-prospere-gray-900 border border-prospere-gray-700 rounded-lg">
-          <p className="text-sm text-prospere-gray-300">
-            <strong className="text-white">Modelo de Negócio:</strong> Seus recursos são utilizados para comprar cotas contempladas de outros clientes, que são vendidas na plataforma BidCon. Quando vendidas com lucro, o lucro retorna para você. Você também pode usar parte do capital para financiar lances de consórcio, recebendo uma taxa de empréstimo.
-          </p>
-        </div>
+        <h1 className="text-3xl font-bold text-white mb-2">
+          {userIsAdmin ? 'Dashboard Administrativo' : 'Dashboard'}
+        </h1>
+        <p className="text-prospere-gray-400">
+          {userIsAdmin ? 'Visão geral de todos os investidores' : 'Visão geral do seu patrimônio'}
+        </p>
+        {!userIsAdmin && (
+          <div className="mt-4 p-4 bg-prospere-gray-900 border border-prospere-gray-700 rounded-lg">
+            <p className="text-sm text-prospere-gray-300">
+              <strong className="text-white">Modelo de Negócio:</strong> Seus recursos são utilizados para comprar cotas contempladas de outros clientes, que são vendidas na plataforma BidCon. Quando vendidas com lucro, o lucro retorna para você. Você também pode usar parte do capital para financiar lances de consórcio, recebendo uma taxa de empréstimo.
+            </p>
+          </div>
+        )}
       </div>
       
       {/* Top Metrics */}

@@ -30,7 +30,9 @@ import {
   calculateInvestmentCurrentValue,
   getInvestmentEvolution
 } from '@/lib/mockData';
-import { mockUsers, createUser, User } from '@/lib/auth';
+import { mockUsers, createUser, User, getCurrentUser, isAdmin } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   LineChart, 
@@ -68,6 +70,10 @@ const mockBidConSales = [
 ];
 
 export default function AdminPage() {
+  const router = useRouter();
+  const currentUser = getCurrentUser();
+  const userIsAdmin = isAdmin();
+  
   const [activeTab, setActiveTab] = useState<'overview' | 'investors' | 'investments' | 'cards' | 'sales' | 'dre' | 'users' | 'returns'>('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateUser, setShowCreateUser] = useState(false);
@@ -92,6 +98,24 @@ export default function AdminPage() {
     month: '',
     returnPercentage: '',
   });
+  
+  // Redirecionar se não for admin
+  useEffect(() => {
+    if (!currentUser || !userIsAdmin) {
+      router.push('/');
+    }
+  }, [currentUser, userIsAdmin, router]);
+  
+  if (!currentUser || !userIsAdmin) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-white mb-2">Acesso Negado</h2>
+          <p className="text-prospere-gray-400">Você não tem permissão para acessar esta página.</p>
+        </div>
+      </div>
+    );
+  }
   
   // Calculate admin metrics
   const totalInvestors = mockInvestorsExtended.length;
