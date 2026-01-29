@@ -303,8 +303,9 @@ export async function validateSelfie(
     errors.push('Arquivo muito grande. Máximo 5MB.');
   }
   
-  if (!validateFileType(selfieFile, ['image'])) {
-    errors.push('Formato inválido. Use JPG ou PNG.');
+  // Aceita qualquer tipo de imagem
+  if (!selfieFile.type.startsWith('image/')) {
+    errors.push('Formato inválido. Use uma imagem (JPG, PNG, WEBP, etc.).');
   }
   
   // Simulação de detecção facial

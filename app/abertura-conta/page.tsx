@@ -73,13 +73,18 @@ export default function AberturaContaPage() {
       return;
     }
 
-    const allowedTypes = type === 'selfie' 
-      ? ['image/jpeg', 'image/jpg', 'image/png']
-      : ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
-
-    if (!validateFileType(file, allowedTypes)) {
-      alert(`Formato inválido. ${type === 'selfie' ? 'Use JPG ou PNG.' : 'Use JPG, PNG ou PDF (digital ou escaneado).'}`);
-      return;
+    // Para selfie, aceita qualquer tipo de imagem
+    if (type === 'selfie') {
+      if (!file.type.startsWith('image/')) {
+        alert('Formato inválido. Use uma imagem (JPG, PNG, WEBP, etc.).');
+        return;
+      }
+    } else {
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+      if (!validateFileType(file, allowedTypes)) {
+        alert('Formato inválido. Use JPG, PNG ou PDF (digital ou escaneado).');
+        return;
+      }
     }
 
     setValidatingDocument(file.name);
@@ -848,7 +853,7 @@ function DocumentUpload({
         type="file"
         id={`upload-${type}`}
         className="hidden"
-        accept={isImage ? 'image/*' : 'image/*,.pdf,application/pdf'}
+        accept={type === 'selfie' ? 'image/*' : isImage ? 'image/*' : 'image/*,.pdf,application/pdf'}
         onChange={handleFileSelect}
       />
       <label htmlFor={`upload-${type}`} className="cursor-pointer">

@@ -641,9 +641,9 @@ export default function AdminPage() {
                           alert('Arquivo muito grande. Máximo 5MB permitido.');
                           return;
                         }
-                        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-                        if (!validateFileType(file, allowedTypes)) {
-                          alert('Formato inválido. Use JPG ou PNG.');
+                        // Para selfie, aceita qualquer tipo de imagem
+                        if (!file.type.startsWith('image/')) {
+                          alert('Formato inválido. Use uma imagem (JPG, PNG, WEBP, etc.).');
                           return;
                         }
                         setValidatingDocument(file.name);
@@ -1909,7 +1909,7 @@ function AdminDocumentUpload({
         type="file"
         id={`admin-upload-${type}`}
         className="hidden"
-        accept={isImage ? 'image/*' : 'image/*,.pdf,application/pdf'}
+        accept={type === 'selfie' ? 'image/*' : isImage ? 'image/*' : 'image/*,.pdf,application/pdf'}
         onChange={handleFileSelect}
       />
       <label htmlFor={`admin-upload-${type}`} className="cursor-pointer">
