@@ -43,26 +43,24 @@ interface DocumentFile {
 
 export default function AberturaContaPage() {
   const [step, setStep] = useState(1);
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [emailVerified, setEmailVerified] = useState(false);
-  const [phoneVerified, setPhoneVerified] = useState(false);
-  const [emailCode, setEmailCode] = useState('');
-  const [phoneCode, setPhoneCode] = useState('');
-  const [generatedEmailCode, setGeneratedEmailCode] = useState<string | null>(null);
-  const [generatedPhoneCode, setGeneratedPhoneCode] = useState<string | null>(null);
-  const [showEmailCodeInput, setShowEmailCodeInput] = useState(false);
-  const [showPhoneCodeInput, setShowPhoneCodeInput] = useState(false);
-  const [documents, setDocuments] = useState<DocumentFile[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
-  const [viewingDocument, setViewingDocument] = useState<DocumentFile | null>(null);
   const [cpf, setCpf] = useState('');
+  const [birthDate, setBirthDate] = useState('');
   const [cep, setCep] = useState('');
+  const [street, setStreet] = useState('');
+  const [number, setNumber] = useState('');
+  const [complement, setComplement] = useState('');
+  const [neighborhood, setNeighborhood] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
   const [addressData, setAddressData] = useState<any>(null);
+  const [documents, setDocuments] = useState<DocumentFile[]>([]);
   const [validatingDocument, setValidatingDocument] = useState<string | null>(null);
+  const [viewingDocument, setViewingDocument] = useState<DocumentFile | null>(null);
 
   const handleFileUpload = async (type: DocumentFile['type'], file: File) => {
-    // Validações básicas
     if (!validateFileSize(file, 5)) {
       alert('Arquivo muito grande. Máximo 5MB permitido.');
       return;
@@ -83,7 +81,6 @@ export default function AberturaContaPage() {
       let validationErrors: string[] = [];
       let extractedData: any = undefined;
 
-      // Validação específica por tipo
       if (type === 'cnh' || type === 'rg') {
         const result = await extractDocumentData(file);
         validationErrors = result.errors;
@@ -112,7 +109,6 @@ export default function AberturaContaPage() {
       if (validationErrors.length > 0) {
         alert(`Erros encontrados:\n${validationErrors.join('\n')}`);
       } else if (type === 'cnh' && extractedData) {
-        // Preencher dados automaticamente se extraídos
         if (extractedData.cpf) setCpf(formatCPF(extractedData.cpf));
       }
     } catch (error) {
@@ -126,64 +122,12 @@ export default function AberturaContaPage() {
     setDocuments(documents.filter(d => d.id !== id));
   };
 
-  const handleVerifyEmail = () => {
-    // Simular envio de código
-    // Em produção, enviaria código real de capital@prospere.com.br
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedEmailCode(verificationCode);
-    console.log(`Email de verificação enviado de capital@prospere.com.br para ${email}`);
-    console.log(`Código de verificação: ${verificationCode}`);
-    // Em produção, salvaria o código no backend e enviaria via email usando capital@prospere.com.br como remetente
-    setShowEmailCodeInput(true);
-  };
-
-  const handleConfirmEmailCode = () => {
-    // Simular validação (em produção validaria com backend)
-    if (emailCode.length === 6) {
-      if (generatedEmailCode && emailCode === generatedEmailCode) {
-        setEmailVerified(true);
-        setShowEmailCodeInput(false);
-        setGeneratedEmailCode(null);
-      } else {
-        alert('Código inválido. Verifique o código enviado por email.');
-      }
-    } else {
-      alert('Código inválido. Digite o código de 6 dígitos.');
-    }
-  };
-
-  const handleVerifyPhone = () => {
-    // Simular envio de código SMS
-    // Em produção, enviaria código real via SMS
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedPhoneCode(verificationCode);
-    console.log(`SMS de verificação enviado para ${phone}`);
-    console.log(`Código de verificação: ${verificationCode}`);
-    // Em produção, salvaria o código no backend e enviaria via SMS
-    setShowPhoneCodeInput(true);
-  };
-
-  const handleConfirmPhoneCode = () => {
-    // Simular validação (em produção validaria com backend)
-    if (phoneCode.length === 6) {
-      if (generatedPhoneCode && phoneCode === generatedPhoneCode) {
-        setPhoneVerified(true);
-        setShowPhoneCodeInput(false);
-        setGeneratedPhoneCode(null);
-      } else {
-        alert('Código inválido. Verifique o código enviado por SMS.');
-      }
-    } else {
-      alert('Código inválido. Digite o código de 6 dígitos.');
-    }
-  };
-
   const canProceed = () => {
     if (step === 1) {
-      return email && phone && emailVerified && phoneVerified;
+      return name && email && phone && cpf && birthDate && cep && street && number && neighborhood && city && state;
     }
     if (step === 2) {
-      return documents.some(d => d.type === 'cnh') && documents.some(d => d.type === 'selfie');
+      return documents.some(d => d.type === 'cnh' || d.type === 'rg') && documents.some(d => d.type === 'selfie');
     }
     return true;
   };
@@ -244,12 +188,14 @@ export default function AberturaContaPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
-                  label="Nome Completo"
+                  label="Nome Completo *"
                   type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   placeholder="Digite seu nome completo"
                 />
                 <Input
-                  label="CPF"
+                  label="CPF *"
                   type="text"
                   value={cpf}
                   onChange={(e) => {
@@ -269,12 +215,34 @@ export default function AberturaContaPage() {
                   </p>
                 )}
                 <Input
-                  label="Data de Nascimento"
+                  label="Data de Nascimento *"
                   type="date"
+                  value={birthDate}
+                  onChange={(e) => setBirthDate(e.target.value)}
+                />
+                <Input
+                  label="E-mail *"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="seu@email.com"
+                />
+                <Input
+                  label="Celular *"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '');
+                    const formatted = value.length <= 11 
+                      ? value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')
+                      : phone;
+                    setPhone(formatted);
+                  }}
+                  placeholder="(00) 00000-0000"
                 />
                 <div className="md:col-span-2">
                   <Input
-                    label="CEP"
+                    label="CEP *"
                     type="text"
                     value={cep}
                     onChange={async (e) => {
@@ -286,6 +254,10 @@ export default function AberturaContaPage() {
                         const result = await validateCEP(value);
                         if (result.isValid && result.address) {
                           setAddressData(result.address);
+                          setStreet(result.address.street || '');
+                          setNeighborhood(result.address.neighborhood || '');
+                          setCity(result.address.city || '');
+                          setState(result.address.state || '');
                         } else {
                           setAddressData(null);
                           if (result.error) {
@@ -305,213 +277,56 @@ export default function AberturaContaPage() {
                         <CheckCircle2 className="w-4 h-4" />
                         Endereço encontrado
                       </p>
-                      <div className="grid grid-cols-2 gap-2 text-xs text-prospere-gray-300">
-                        <div><span className="text-prospere-gray-400">Rua:</span> {addressData.street}</div>
-                        <div><span className="text-prospere-gray-400">Bairro:</span> {addressData.neighborhood}</div>
-                        <div><span className="text-prospere-gray-400">Cidade:</span> {addressData.city}</div>
-                        <div><span className="text-prospere-gray-400">Estado:</span> {addressData.state}</div>
-                      </div>
                     </div>
                   )}
                 </div>
                 {addressData && (
                   <>
                     <Input
-                      label="Endereço (Rua/Avenida)"
+                      label="Endereço (Rua/Avenida) *"
                       type="text"
-                      defaultValue={addressData.street}
+                      value={street}
+                      onChange={(e) => setStreet(e.target.value)}
                       placeholder="Preenchido automaticamente"
                     />
                     <Input
-                      label="Número"
+                      label="Número *"
                       type="text"
+                      value={number}
+                      onChange={(e) => setNumber(e.target.value)}
                       placeholder="Número do endereço"
                     />
                     <Input
                       label="Complemento"
                       type="text"
+                      value={complement}
+                      onChange={(e) => setComplement(e.target.value)}
                       placeholder="Apto, Bloco, etc (opcional)"
                     />
                     <Input
-                      label="Bairro"
+                      label="Bairro *"
                       type="text"
-                      defaultValue={addressData.neighborhood}
+                      value={neighborhood}
+                      onChange={(e) => setNeighborhood(e.target.value)}
                       placeholder="Preenchido automaticamente"
                     />
                     <Input
-                      label="Cidade"
+                      label="Cidade *"
                       type="text"
-                      defaultValue={addressData.city}
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
                       placeholder="Preenchido automaticamente"
                     />
                     <Input
-                      label="Estado"
+                      label="Estado *"
                       type="text"
-                      defaultValue={addressData.state}
+                      value={state}
+                      onChange={(e) => setState(e.target.value.toUpperCase())}
                       placeholder="Preenchido automaticamente"
                       maxLength={2}
                     />
                   </>
                 )}
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <Input
-                    label="E-mail"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="seu@email.com"
-                    disabled={emailVerified}
-                  />
-                  {email && !emailVerified && !showEmailCodeInput && (
-                    <div className="mt-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleVerifyEmail}
-                        className="w-full md:w-auto"
-                      >
-                        <Mail className="w-4 h-4 mr-2" />
-                        Enviar Código de Verificação
-                      </Button>
-                    </div>
-                  )}
-                  {showEmailCodeInput && !emailVerified && (
-                    <div className="mt-2 space-y-2">
-                      <div className="text-xs text-prospere-gray-400 bg-prospere-gray-900 p-2 rounded border border-prospere-gray-800">
-                        <p className="text-prospere-gray-300">
-                          📧 Código enviado de <strong className="text-white">capital@prospere.com.br</strong>
-                        </p>
-                        <p className="mt-1 text-prospere-gray-400">
-                          Verifique sua caixa de entrada e spam. O código expira em 10 minutos.
-                        </p>
-                      </div>
-                      <Input
-                        label="Código de Verificação"
-                        type="text"
-                        value={emailCode}
-                        onChange={(e) => setEmailCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                        placeholder="000000"
-                        maxLength={6}
-                      />
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={handleConfirmEmailCode}
-                          disabled={emailCode.length !== 6}
-                        >
-                          Confirmar Código
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setShowEmailCodeInput(false);
-                            setEmailCode('');
-                          }}
-                        >
-                          Cancelar
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  {emailVerified && (
-                    <div className="mt-2 flex items-center gap-2 text-green-400 text-sm">
-                      <CheckCircle2 className="w-4 h-4" />
-                      E-mail verificado
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <Input
-                    label="Celular"
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, '');
-                      const formatted = value.length <= 11 
-                        ? value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')
-                        : phone;
-                      setPhone(formatted);
-                    }}
-                    placeholder="(00) 00000-0000"
-                    disabled={phoneVerified}
-                  />
-                  {phone && !phoneVerified && !showPhoneCodeInput && (
-                    <div className="mt-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleVerifyPhone}
-                        className="w-full md:w-auto"
-                      >
-                        <Phone className="w-4 h-4 mr-2" />
-                        Enviar Código SMS
-                      </Button>
-                    </div>
-                  )}
-                  {showPhoneCodeInput && !phoneVerified && (
-                    <div className="mt-2 space-y-2">
-                      <div className="text-xs text-prospere-gray-400 bg-prospere-gray-900 p-3 rounded border border-prospere-gray-800">
-                        <p className="text-prospere-gray-300 mb-2">
-                          📱 Código SMS enviado para <strong className="text-white">{phone}</strong>
-                        </p>
-                        <p className="mt-1 text-prospere-gray-400 mb-2">
-                          Verifique suas mensagens. O código expira em 10 minutos.
-                        </p>
-                        {generatedPhoneCode && (
-                          <div className="mt-2 p-2 bg-prospere-red/10 border border-prospere-red rounded">
-                            <p className="text-xs text-prospere-gray-400 mb-1">
-                              🔍 <strong>Modo Desenvolvimento:</strong> Como o SMS ainda não está configurado, use este código:
-                            </p>
-                            <p className="text-lg font-bold text-white text-center py-1 bg-prospere-gray-800 rounded">
-                              {generatedPhoneCode}
-                            </p>
-                            <p className="text-xs text-prospere-gray-500 mt-1 text-center">
-                              Em produção, este código seria enviado por SMS
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                      <Input
-                        label="Código de Verificação SMS"
-                        type="text"
-                        value={phoneCode}
-                        onChange={(e) => setPhoneCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                        placeholder="000000"
-                        maxLength={6}
-                      />
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={handleConfirmPhoneCode}
-                          disabled={phoneCode.length !== 6}
-                        >
-                          Confirmar Código
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setShowPhoneCodeInput(false);
-                            setPhoneCode('');
-                          }}
-                        >
-                          Cancelar
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  {phoneVerified && (
-                    <div className="mt-2 flex items-center gap-2 text-green-400 text-sm">
-                      <CheckCircle2 className="w-4 h-4" />
-                      Celular verificado
-                    </div>
-                  )}
-                </div>
               </div>
             </motion.div>
           )}
@@ -537,42 +352,23 @@ export default function AberturaContaPage() {
                 </div>
               </div>
 
-              {/* CNH Upload */}
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-prospere-gray-300 mb-2">
-                    CNH (Carteira Nacional de Habilitação) *
+                    CNH ou RG (Documento de Identidade) *
                   </label>
                   <DocumentUpload
                     type="cnh"
-                    label="Frente e Verso da CNH"
+                    label="Frente e Verso da CNH ou RG"
                     icon={<FileText className="w-6 h-6" />}
                     onUpload={handleFileUpload}
-                    document={documents.find(d => d.type === 'cnh')}
+                    document={documents.find(d => d.type === 'cnh' || d.type === 'rg')}
                     onRemove={handleRemoveDocument}
                     onView={setViewingDocument}
                     isValidating={validatingDocument !== null}
                   />
                 </div>
 
-                {/* RG Upload (Optional) */}
-                <div>
-                  <label className="block text-sm font-medium text-prospere-gray-300 mb-2">
-                    RG (Opcional)
-                  </label>
-                  <DocumentUpload
-                    type="rg"
-                    label="Frente e Verso do RG"
-                    icon={<FileText className="w-6 h-6" />}
-                    onUpload={handleFileUpload}
-                    document={documents.find(d => d.type === 'rg')}
-                    onRemove={handleRemoveDocument}
-                    onView={setViewingDocument}
-                    isValidating={validatingDocument !== null}
-                  />
-                </div>
-
-                {/* Comprovante de Residência */}
                 <div>
                   <label className="block text-sm font-medium text-prospere-gray-300 mb-2">
                     Comprovante de Residência *
@@ -589,14 +385,13 @@ export default function AberturaContaPage() {
                   />
                 </div>
 
-                {/* Selfie */}
                 <div>
                   <label className="block text-sm font-medium text-prospere-gray-300 mb-2">
                     Selfie com Documento *
                   </label>
                   <DocumentUpload
                     type="selfie"
-                    label="Selfie segurando sua CNH"
+                    label="Selfie segurando sua CNH ou RG"
                     icon={<Camera className="w-6 h-6" />}
                     onUpload={handleFileUpload}
                     document={documents.find(d => d.type === 'selfie')}
@@ -626,7 +421,7 @@ export default function AberturaContaPage() {
                 >
                   <CheckCircle2 className="w-12 h-12 text-green-400" />
                 </motion.div>
-                <h2 className="text-2xl font-bold text-white mb-2">Conta Criada com Sucesso!</h2>
+                <h2 className="text-2xl font-bold text-white mb-2">Solicitação Enviada!</h2>
                 <p className="text-prospere-gray-400 mb-6">
                   Sua solicitação de abertura de conta foi enviada e está em análise.
                 </p>
@@ -684,8 +479,7 @@ export default function AberturaContaPage() {
                 <div>
                   <h3 className="text-white font-bold">{viewingDocument.name}</h3>
                   <p className="text-sm text-prospere-gray-400">
-                    {viewingDocument.type === 'cnh' && 'CNH'}
-                    {viewingDocument.type === 'rg' && 'RG'}
+                    {viewingDocument.type === 'cnh' && 'CNH/RG'}
                     {viewingDocument.type === 'comprovante' && 'Comprovante de Residência'}
                     {viewingDocument.type === 'selfie' && 'Selfie'}
                   </p>
