@@ -85,6 +85,34 @@ export default function AberturaContaPage() {
         const result = await extractDocumentData(file);
         validationErrors = result.errors;
         extractedData = result.extractedData;
+        
+        // Preencher automaticamente os campos com dados extraídos do OCR
+        if (extractedData) {
+          if (extractedData.cpf) {
+            setCpf(formatCPF(extractedData.cpf));
+          }
+          if (extractedData.name) {
+            // Converter nome para formato normal (primeira letra maiúscula)
+            const nameParts = extractedData.name.toLowerCase().split(' ');
+            const formattedName = nameParts.map((part: string) => 
+              part.charAt(0).toUpperCase() + part.slice(1)
+            ).join(' ');
+            setName(formattedName);
+          }
+          if (extractedData.birthDate) {
+            setBirthDate(extractedData.birthDate);
+          }
+          
+          // Mostrar mensagem de sucesso com dados extraídos
+          const extractedFields = [];
+          if (extractedData.name) extractedFields.push('Nome');
+          if (extractedData.cpf) extractedFields.push('CPF');
+          if (extractedData.birthDate) extractedFields.push('Data de Nascimento');
+          
+          if (extractedFields.length > 0) {
+            alert(`✅ OCR concluído!\n\nDados extraídos automaticamente:\n${extractedFields.join(', ')}\n\nVerifique se os dados estão corretos.`);
+          }
+        }
       } else if (type === 'selfie') {
         const cnhDoc = documents.find(d => d.type === 'cnh');
         const result = await validateSelfie(file, cnhDoc?.file);
@@ -107,9 +135,7 @@ export default function AberturaContaPage() {
       setDocuments([...documents.filter(d => d.type !== type), newDoc]);
       
       if (validationErrors.length > 0) {
-        alert(`Erros encontrados:\n${validationErrors.join('\n')}`);
-      } else if (type === 'cnh' && extractedData) {
-        if (extractedData.cpf) setCpf(formatCPF(extractedData.cpf));
+        alert(`⚠️ Atenção:\n${validationErrors.join('\n')}`);
       }
     } catch (error) {
       alert('Erro ao processar documento. Tente novamente.');

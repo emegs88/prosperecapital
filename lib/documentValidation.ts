@@ -107,8 +107,15 @@ export async function validateCEP(cep: string): Promise<{
 }
 
 /**
- * Simula OCR de documento (CNH/RG)
- * Em produção, integraria com serviço de OCR real (Google Vision, AWS Textract, etc)
+ * Simula OCR de documento (CNH/RG) com extração de dados
+ * Em produção, integraria com serviço de OCR real (Google Vision, AWS Textract, Tesseract.js, etc)
+ * 
+ * Esta função simula a extração de:
+ * - Nome completo
+ * - CPF
+ * - Data de nascimento
+ * - RG (se disponível)
+ * - CNH (se disponível)
  */
 export async function extractDocumentData(file: File): Promise<DocumentValidationResult> {
   // Validações básicas
@@ -122,21 +129,55 @@ export async function extractDocumentData(file: File): Promise<DocumentValidatio
     errors.push('Formato inválido. Use JPG, PNG ou PDF.');
   }
   
-  // Simulação de extração de dados
-  // Em produção, aqui faria a chamada para API de OCR
-  const extractedData = {
-    // Dados simulados - em produção viriam do OCR
-    cpf: '',
-    name: '',
-    birthDate: '',
-    rg: '',
-    cnh: '',
+  // Simulação de processamento OCR com delay realista
+  await new Promise(resolve => setTimeout(resolve, 1500));
+  
+  // Simulação de extração de dados via OCR
+  // Em produção, aqui faria:
+  // 1. Upload da imagem para API de OCR (Google Vision, AWS Textract, Tesseract.js)
+  // 2. Processamento do texto extraído
+  // 3. Extração de campos específicos usando regex e validações
+  
+  // Dados simulados extraídos do OCR
+  // Em produção, esses dados viriam do processamento real do documento
+  const mockExtractedData = {
+    // Exemplo de dados que seriam extraídos de uma CNH/RG brasileira
+    name: 'JOÃO SILVA SANTOS', // Nome completo em maiúsculas (padrão CNH)
+    cpf: '12345678901', // CPF sem formatação
+    birthDate: '1985-03-15', // Data de nascimento no formato YYYY-MM-DD
+    rg: '123456789', // RG (se disponível)
+    cnh: '12345678901', // Número da CNH (se for CNH)
   };
+  
+  // Validação dos dados extraídos
+  if (mockExtractedData.cpf && !validateCPF(mockExtractedData.cpf)) {
+    errors.push('CPF extraído do documento é inválido. Verifique o documento.');
+  }
+  
+  // Validação da data de nascimento
+  if (mockExtractedData.birthDate) {
+    const birthDate = new Date(mockExtractedData.birthDate);
+    const today = new Date();
+    const age = today.getFullYear() - birthDate.getFullYear();
+    
+    if (age < 18 || age > 120) {
+      errors.push('Data de nascimento extraída parece inválida. Verifique o documento.');
+    }
+  }
+  
+  // Se houver erros críticos, não retorna dados extraídos
+  const extractedData = errors.length === 0 ? {
+    cpf: formatCPF(mockExtractedData.cpf),
+    name: mockExtractedData.name,
+    birthDate: mockExtractedData.birthDate,
+    rg: mockExtractedData.rg,
+    cnh: mockExtractedData.cnh,
+  } : undefined;
   
   return {
     isValid: errors.length === 0,
     errors,
-    extractedData: errors.length === 0 ? extractedData : undefined,
+    extractedData,
   };
 }
 

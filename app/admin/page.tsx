@@ -18,8 +18,20 @@ import {
   Plus,
   Search,
   Calendar,
-  Percent
+  Percent,
+  Upload,
+  Camera,
+  Eye,
+  Trash2,
+  XCircle
 } from 'lucide-react';
+import Image from 'next/image';
+import {
+  validateFileSize,
+  validateFileType,
+  extractDocumentData,
+  validateSelfie,
+} from '@/lib/documentValidation';
 import { formatCurrency, formatPercentage } from '@/lib/calculations';
 import { 
   mockInvestors, 
@@ -33,7 +45,7 @@ import {
 import { mockUsers, createUser, User, getCurrentUser, isAdmin } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LineChart, 
   Line, 
@@ -98,6 +110,32 @@ export default function AdminPage() {
     month: '',
     returnPercentage: '',
   });
+  
+  // Estados para cadastro de investidor com documentos
+  const [showCreateInvestor, setShowCreateInvestor] = useState(false);
+  const [newInvestor, setNewInvestor] = useState({
+    name: '',
+    email: '',
+    cpf: '',
+    phone: '',
+    birthDate: '',
+    cep: '',
+    address: '',
+    number: '',
+    complement: '',
+    neighborhood: '',
+    city: '',
+    state: '',
+  });
+  const [investorDocuments, setInvestorDocuments] = useState<Array<{
+    id: string;
+    type: 'cnh' | 'rg' | 'comprovante' | 'selfie';
+    file: File;
+    preview?: string;
+    name: string;
+  }>>([]);
+  const [validatingDocument, setValidatingDocument] = useState<string | null>(null);
+  const [viewingDocument, setViewingDocument] = useState<{ file: File; name: string; type: string } | null>(null);
   
   // Redirecionar se não for admin
   useEffect(() => {
@@ -253,12 +291,331 @@ export default function AdminPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-64"
               />
-              <Button>
+              <Button onClick={() => setShowCreateInvestor(true)}>
                 <Plus className="w-4 h-4 mr-2" />
                 Novo Investidor
               </Button>
             </div>
           </div>
+          
+          {/* Formulário de Cadastro de Investidor */}
+          {showCreateInvestor && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6 p-6 bg-prospere-gray-800 rounded-lg border border-prospere-gray-700"
+            >
+              <h3 className="text-lg font-bold text-white mb-4">Cadastrar Novo Investidor</h3>
+              
+              {/* Dados Pessoais */}
+              <div className="mb-6">
+                <h4 className="text-md font-semibold text-white mb-3">Dados Pessoais</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    label="Nome Completo *"
+                    value={newInvestor.name}
+                    onChange={(e) => setNewInvestor({ ...newInvestor, name: e.target.value })}
+                    placeholder="Nome completo"
+                  />
+                  <Input
+                    label="CPF *"
+                    value={newInvestor.cpf}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 11);
+                      const formatted = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+                      setNewInvestor({ ...newInvestor, cpf: formatted });
+                    }}
+                    placeholder="000.000.000-00"
+                    maxLength={14}
+                  />
+                  <Input
+                    label="E-mail *"
+                    type="email"
+                    value={newInvestor.email}
+                    onChange={(e) => setNewInvestor({ ...newInvestor, email: e.target.value })}
+                    placeholder="email@exemplo.com"
+                  />
+                  <Input
+                    label="Telefone *"
+                    type="tel"
+                    value={newInvestor.phone}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '');
+                      const formatted = value.length <= 11
+                        ? value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')
+                        : newInvestor.phone;
+                      setNewInvestor({ ...newInvestor, phone: formatted });
+                    }}
+                    placeholder="(00) 00000-0000"
+                  />
+                  <Input
+                    label="Data de Nascimento *"
+                    type="date"
+                    value={newInvestor.birthDate}
+                    onChange={(e) => setNewInvestor({ ...newInvestor, birthDate: e.target.value })}
+                  />
+                </div>
+              </div>
+              
+              {/* Endereço */}
+              <div className="mb-6">
+                <h4 className="text-md font-semibold text-white mb-3">Endereço</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    label="CEP *"
+                    value={newInvestor.cep}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 8);
+                      const formatted = value.replace(/(\d{5})(\d{3})/, '$1-$2');
+                      setNewInvestor({ ...newInvestor, cep: formatted });
+                    }}
+                    placeholder="00000-000"
+                    maxLength={9}
+                  />
+                  <Input
+                    label="Endereço (Rua/Avenida) *"
+                    value={newInvestor.address}
+                    onChange={(e) => setNewInvestor({ ...newInvestor, address: e.target.value })}
+                    placeholder="Nome da rua"
+                  />
+                  <Input
+                    label="Número *"
+                    value={newInvestor.number}
+                    onChange={(e) => setNewInvestor({ ...newInvestor, number: e.target.value })}
+                    placeholder="Número"
+                  />
+                  <Input
+                    label="Complemento"
+                    value={newInvestor.complement}
+                    onChange={(e) => setNewInvestor({ ...newInvestor, complement: e.target.value })}
+                    placeholder="Apto, Bloco, etc (opcional)"
+                  />
+                  <Input
+                    label="Bairro *"
+                    value={newInvestor.neighborhood}
+                    onChange={(e) => setNewInvestor({ ...newInvestor, neighborhood: e.target.value })}
+                    placeholder="Bairro"
+                  />
+                  <Input
+                    label="Cidade *"
+                    value={newInvestor.city}
+                    onChange={(e) => setNewInvestor({ ...newInvestor, city: e.target.value })}
+                    placeholder="Cidade"
+                  />
+                  <Input
+                    label="Estado *"
+                    value={newInvestor.state}
+                    onChange={(e) => setNewInvestor({ ...newInvestor, state: e.target.value.toUpperCase() })}
+                    placeholder="UF"
+                    maxLength={2}
+                  />
+                </div>
+              </div>
+              
+              {/* Upload de Documentos */}
+              <div className="mb-6">
+                <h4 className="text-md font-semibold text-white mb-3">Documentos *</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-prospere-gray-300 mb-2">
+                      CNH ou RG (Frente e Verso) *
+                    </label>
+                    <AdminDocumentUpload
+                      type="cnh"
+                      label="CNH/RG"
+                      icon={<FileText className="w-6 h-6" />}
+                      onUpload={async (type, file) => {
+                        if (!validateFileSize(file, 5)) {
+                          alert('Arquivo muito grande. Máximo 5MB permitido.');
+                          return;
+                        }
+                        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+                        if (!validateFileType(file, allowedTypes)) {
+                          alert('Formato inválido. Use JPG, PNG ou PDF.');
+                          return;
+                        }
+                        setValidatingDocument(file.name);
+                        try {
+                          const result = await extractDocumentData(file);
+                          const newDoc = {
+                            id: Date.now().toString(),
+                            type: type as 'cnh' | 'rg',
+                            file,
+                            preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
+                            name: file.name,
+                          };
+                          setInvestorDocuments([...investorDocuments.filter(d => d.type !== type), newDoc]);
+                          
+                          // Preencher automaticamente os campos com dados extraídos do OCR
+                          if (result.extractedData) {
+                            const updates: any = { ...newInvestor };
+                            
+                            if (result.extractedData.cpf) {
+                              updates.cpf = result.extractedData.cpf;
+                            }
+                            if (result.extractedData.name) {
+                              // Converter nome para formato normal (primeira letra maiúscula)
+                              const nameParts = result.extractedData.name.toLowerCase().split(' ');
+                              updates.name = nameParts.map((part: string) => 
+                                part.charAt(0).toUpperCase() + part.slice(1)
+                              ).join(' ');
+                            }
+                            if (result.extractedData.birthDate) {
+                              updates.birthDate = result.extractedData.birthDate;
+                            }
+                            
+                            setNewInvestor(updates);
+                            
+                            // Mostrar mensagem de sucesso com dados extraídos
+                            if (result.extractedData.name || result.extractedData.cpf || result.extractedData.birthDate) {
+                              const extractedFields = [];
+                              if (result.extractedData.name) extractedFields.push('Nome');
+                              if (result.extractedData.cpf) extractedFields.push('CPF');
+                              if (result.extractedData.birthDate) extractedFields.push('Data de Nascimento');
+                              
+                              alert(`✅ OCR concluído!\n\nDados extraídos automaticamente:\n${extractedFields.join(', ')}\n\nVerifique se os dados estão corretos.`);
+                            }
+                          }
+                          
+                          if (result.errors.length > 0) {
+                            alert(`⚠️ Atenção:\n${result.errors.join('\n')}`);
+                          }
+                        } catch (error) {
+                          alert('Erro ao processar documento. Tente novamente.');
+                        } finally {
+                          setValidatingDocument(null);
+                        }
+                      }}
+                      document={investorDocuments.find(d => d.type === 'cnh' || d.type === 'rg')}
+                      onRemove={(id) => setInvestorDocuments(investorDocuments.filter(d => d.id !== id))}
+                      onView={(doc) => setViewingDocument({ file: doc.file, name: doc.name, type: doc.type })}
+                      isValidating={validatingDocument !== null}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-prospere-gray-300 mb-2">
+                      Comprovante de Residência *
+                    </label>
+                    <AdminDocumentUpload
+                      type="comprovante"
+                      label="Comprovante"
+                      icon={<FileText className="w-6 h-6" />}
+                      onUpload={async (type, file) => {
+                        if (!validateFileSize(file, 5)) {
+                          alert('Arquivo muito grande. Máximo 5MB permitido.');
+                          return;
+                        }
+                        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+                        if (!validateFileType(file, allowedTypes)) {
+                          alert('Formato inválido. Use JPG, PNG ou PDF.');
+                          return;
+                        }
+                        const newDoc = {
+                          id: Date.now().toString(),
+                          type: type as 'comprovante',
+                          file,
+                          preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
+                          name: file.name,
+                        };
+                        setInvestorDocuments([...investorDocuments.filter(d => d.type !== type), newDoc]);
+                      }}
+                      document={investorDocuments.find(d => d.type === 'comprovante')}
+                      onRemove={(id) => setInvestorDocuments(investorDocuments.filter(d => d.id !== id))}
+                      onView={(doc) => setViewingDocument({ file: doc.file, name: doc.name, type: doc.type })}
+                      isValidating={validatingDocument !== null}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-prospere-gray-300 mb-2">
+                      Selfie com Documento *
+                    </label>
+                    <AdminDocumentUpload
+                      type="selfie"
+                      label="Selfie"
+                      icon={<Camera className="w-6 h-6" />}
+                      isImage={true}
+                      onUpload={async (type, file) => {
+                        if (!validateFileSize(file, 5)) {
+                          alert('Arquivo muito grande. Máximo 5MB permitido.');
+                          return;
+                        }
+                        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+                        if (!validateFileType(file, allowedTypes)) {
+                          alert('Formato inválido. Use JPG ou PNG.');
+                          return;
+                        }
+                        setValidatingDocument(file.name);
+                        try {
+                          const cnhDoc = investorDocuments.find(d => d.type === 'cnh' || d.type === 'rg');
+                          const result = await validateSelfie(file, cnhDoc?.file);
+                          if (result.errors.length > 0) {
+                            alert(`Erros encontrados:\n${result.errors.join('\n')}`);
+                          }
+                          const newDoc = {
+                            id: Date.now().toString(),
+                            type: type as 'selfie',
+                            file,
+                            preview: URL.createObjectURL(file),
+                            name: file.name,
+                          };
+                          setInvestorDocuments([...investorDocuments.filter(d => d.type !== type), newDoc]);
+                        } catch (error) {
+                          alert('Erro ao processar selfie.');
+                        } finally {
+                          setValidatingDocument(null);
+                        }
+                      }}
+                      document={investorDocuments.find(d => d.type === 'selfie')}
+                      onRemove={(id) => setInvestorDocuments(investorDocuments.filter(d => d.id !== id))}
+                      onView={(doc) => setViewingDocument({ file: doc.file, name: doc.name, type: doc.type })}
+                      isValidating={validatingDocument !== null}
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex gap-2 mt-4">
+                <Button
+                  onClick={() => {
+                    if (!newInvestor.name || !newInvestor.email || !newInvestor.cpf) {
+                      alert('Preencha pelo menos Nome, E-mail e CPF');
+                      return;
+                    }
+                    if (!investorDocuments.find(d => d.type === 'cnh' || d.type === 'rg')) {
+                      alert('É necessário fazer upload da CNH ou RG');
+                      return;
+                    }
+                    if (!investorDocuments.find(d => d.type === 'selfie')) {
+                      alert('É necessário fazer upload da selfie');
+                      return;
+                    }
+                    // Em produção, salvaria no banco de dados
+                    alert(`Investidor ${newInvestor.name} cadastrado com sucesso!\n\nDocumentos anexados: ${investorDocuments.length}`);
+                    setNewInvestor({
+                      name: '', email: '', cpf: '', phone: '', birthDate: '',
+                      cep: '', address: '', number: '', complement: '', neighborhood: '', city: '', state: ''
+                    });
+                    setInvestorDocuments([]);
+                    setShowCreateInvestor(false);
+                  }}
+                >
+                  Cadastrar Investidor
+                </Button>
+                <Button variant="outline" onClick={() => {
+                  setShowCreateInvestor(false);
+                  setNewInvestor({
+                    name: '', email: '', cpf: '', phone: '', birthDate: '',
+                    cep: '', address: '', number: '', complement: '', neighborhood: '', city: '', state: ''
+                  });
+                  setInvestorDocuments([]);
+                }}>
+                  Cancelar
+                </Button>
+              </div>
+            </motion.div>
+          )}
           
           <div className="space-y-2">
             {mockInvestorsExtended
@@ -1125,6 +1482,213 @@ export default function AdminPage() {
           </div>
         </Card>
       )}
+      
+      {/* Document Viewer Modal */}
+      <AnimatePresence>
+        {viewingDocument && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+            onClick={() => setViewingDocument(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-prospere-gray-900 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto"
+            >
+              <div className="sticky top-0 bg-prospere-gray-900 border-b border-prospere-gray-800 p-4 flex items-center justify-between">
+                <div>
+                  <h3 className="text-white font-bold">{viewingDocument.name}</h3>
+                  <p className="text-sm text-prospere-gray-400">{viewingDocument.type}</p>
+                </div>
+                <button
+                  onClick={() => setViewingDocument(null)}
+                  className="p-2 hover:bg-prospere-gray-800 rounded-lg transition-colors"
+                >
+                  <XCircle className="w-6 h-6 text-prospere-gray-400" />
+                </button>
+              </div>
+              <div className="p-6">
+                {viewingDocument.file.type === 'application/pdf' ? (
+                  <iframe
+                    src={URL.createObjectURL(viewingDocument.file)}
+                    className="w-full h-[70vh] rounded-lg"
+                    title={viewingDocument.name}
+                  />
+                ) : (
+                  <div className="relative w-full h-[70vh]">
+                    <Image
+                      src={URL.createObjectURL(viewingDocument.file)}
+                      alt={viewingDocument.name}
+                      fill
+                      className="object-contain rounded-lg"
+                      unoptimized
+                    />
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// Componente de Upload de Documentos para Admin
+interface AdminDocumentUploadProps {
+  type: 'cnh' | 'rg' | 'comprovante' | 'selfie';
+  label: string;
+  icon: React.ReactNode;
+  onUpload: (type: string, file: File) => void;
+  document?: {
+    id: string;
+    type: string;
+    file: File;
+    preview?: string;
+    name: string;
+  };
+  onRemove: (id: string) => void;
+  isImage?: boolean;
+  onView?: (document: { file: File; name: string; type: string }) => void;
+  isValidating?: boolean;
+}
+
+function AdminDocumentUpload({
+  type,
+  label,
+  icon,
+  onUpload,
+  document,
+  onRemove,
+  isImage = false,
+  onView,
+  isValidating = false,
+}: AdminDocumentUploadProps) {
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      onUpload(type, file);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      onUpload(type, file);
+    }
+  };
+
+  if (document) {
+    return (
+      <div className="p-4 bg-prospere-gray-800 rounded-lg border border-prospere-gray-700">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 flex-1">
+            {isImage && document.preview ? (
+              <div className="relative w-16 h-16">
+                <Image
+                  src={document.preview}
+                  alt={document.name}
+                  fill
+                  className="object-cover rounded-lg"
+                  unoptimized
+                />
+              </div>
+            ) : document.file.type === 'application/pdf' ? (
+              <div className="w-16 h-16 bg-red-900/30 rounded-lg flex items-center justify-center border border-red-800">
+                <FileText className="w-8 h-8 text-red-400" />
+              </div>
+            ) : (
+              <div className="w-16 h-16 bg-prospere-gray-700 rounded-lg flex items-center justify-center">
+                {icon}
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-white truncate">{document.name}</p>
+              <p className="text-xs text-green-400">✓ Enviado</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {onView && (
+              <button
+                onClick={() => onView({ file: document.file, name: document.name, type: document.type })}
+                className="p-2 hover:bg-prospere-gray-700 rounded-lg transition-colors"
+              >
+                <Eye className="w-4 h-4 text-prospere-gray-400" />
+              </button>
+            )}
+            <button
+              onClick={() => onRemove(document.id)}
+              className="p-2 hover:bg-red-900/30 rounded-lg transition-colors"
+            >
+              <Trash2 className="w-4 h-4 text-red-400" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      onDragOver={(e) => {
+        e.preventDefault();
+        setIsDragging(true);
+      }}
+      onDragLeave={() => setIsDragging(false)}
+      onDrop={handleDrop}
+      className={`
+        border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer
+        ${isDragging
+          ? 'border-prospere-red bg-prospere-red/10'
+          : 'border-prospere-gray-700 hover:border-prospere-gray-600'
+        }
+      `}
+    >
+      <input
+        type="file"
+        id={`admin-upload-${type}`}
+        className="hidden"
+        accept={isImage ? 'image/*' : 'image/*,.pdf'}
+        onChange={handleFileSelect}
+      />
+      <label htmlFor={`admin-upload-${type}`} className="cursor-pointer">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 bg-prospere-gray-800 rounded-full flex items-center justify-center text-prospere-gray-400">
+            {icon}
+          </div>
+          <div>
+            <p className="text-white font-medium text-sm mb-1">{label}</p>
+            <p className="text-xs text-prospere-gray-400">
+              Clique ou arraste o arquivo
+            </p>
+            <p className="text-xs text-prospere-gray-500 mt-1">
+              JPG, PNG ou PDF (máx. 5MB)
+            </p>
+          </div>
+          <Button variant="outline" size="sm" disabled={isValidating}>
+            {isValidating ? (
+              <>
+                <div className="w-4 h-4 border-2 border-prospere-gray-400 border-t-transparent rounded-full animate-spin mr-2" />
+                Validando...
+              </>
+            ) : (
+              <>
+                <Upload className="w-4 h-4 mr-2" />
+                Selecionar
+              </>
+            )}
+          </Button>
+        </div>
+      </label>
     </div>
   );
 }
