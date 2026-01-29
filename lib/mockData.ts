@@ -8,13 +8,13 @@ import {
   MonthlyReturn
 } from '@/types';
 
-// Mock Investor
+// Mock Investor (padrão - será substituído pelo usuário logado)
 export const mockInvestor: Investor = {
   id: '1',
-  name: 'João Silva',
-  email: 'joao@example.com',
-  cpf: '123.456.789-00',
-  createdAt: new Date('2023-01-15'),
+  name: 'Investidor',
+  email: 'investidor@example.com',
+  cpf: '000.000.000-00',
+  createdAt: new Date(),
 };
 
 // Mock Investors (for admin)
@@ -44,215 +44,20 @@ export const mockInvestors: Investor[] = [
 ];
 
 // Mock Monthly Returns (rentabilidades definidas pelo admin)
-export const mockMonthlyReturns: MonthlyReturn[] = [
-  {
-    id: 'ret-1',
-    investmentId: 'inv-nov-2024',
-    month: '2024-11',
-    returnPercentage: 15.0,
-    applied: true,
-    createdAt: new Date('2024-12-01'),
-  },
-  {
-    id: 'ret-2',
-    investmentId: 'inv-nov-2024',
-    month: '2024-12',
-    returnPercentage: 3.2,
-    applied: true,
-    createdAt: new Date('2025-01-01'),
-  },
-  {
-    id: 'ret-3',
-    investmentId: 'inv-nov-2024',
-    month: '2025-01',
-    returnPercentage: 2.8,
-    applied: true,
-    createdAt: new Date('2025-02-01'),
-  },
-];
+// ZERADO - Admin deve adicionar manualmente através do painel
+export const mockMonthlyReturns: MonthlyReturn[] = [];
 
 // Mock Investments
-export const mockInvestments: Investment[] = [
-  {
-    id: 'inv-1',
-    investorId: '1',
-    amount: 50000,
-    type: 'single',
-    pool: 'mixed',
-    date: new Date('2023-01-15'),
-    status: 'active',
-  },
-  {
-    id: 'inv-2',
-    investorId: '1',
-    amount: 30000,
-    type: 'recurring',
-    pool: 'base',
-    date: new Date('2023-03-01'),
-    status: 'active',
-  },
-  {
-    id: 'inv-3',
-    investorId: '1',
-    amount: 20000,
-    type: 'single',
-    pool: 'performance',
-    date: new Date('2023-06-10'),
-    status: 'active',
-  },
-  // Exemplo: Investimento retroativo de novembro/2024
-  {
-    id: 'inv-nov-2024',
-    investorId: '1',
-    amount: 20000,
-    type: 'single',
-    pool: 'mixed',
-    date: new Date('2024-11-01'),
-    status: 'active',
-    monthlyReturns: mockMonthlyReturns.filter(r => r.investmentId === 'inv-nov-2024'),
-  },
-  // Investimento Rick Dias - Dezembro/2024
-  // Investiu 20 mil, hoje está em 28 mil (8 mil de rentabilidade = 40%)
-  {
-    id: 'inv-rick-dez-2024',
-    investorId: '4',
-    amount: 20000,
-    type: 'single',
-    pool: 'mixed',
-    date: new Date('2024-12-01'),
-    status: 'active',
-    monthlyReturns: [
-      {
-        id: 'ret-rick-dez',
-        investmentId: 'inv-rick-dez-2024',
-        month: '2024-12',
-        returnPercentage: 20.0, // 20% = 4.000 de 20.000
-        applied: true,
-        createdAt: new Date('2024-12-15'),
-      },
-      {
-        id: 'ret-rick-jan',
-        investmentId: 'inv-rick-dez-2024',
-        month: '2025-01',
-        returnPercentage: 16.67, // 16.67% de 24.000 = 4.000, totalizando 28.000
-        applied: true,
-        createdAt: new Date('2025-01-15'),
-      },
-    ],
-  },
-];
+// ZERADO - Admin deve adicionar investimentos manualmente através do painel
+export const mockInvestments: Investment[] = [];
 
 // Mock Transactions
-export const mockTransactions: Transaction[] = [
-  {
-    id: 'tx-1',
-    investorId: '1',
-    type: 'deposit',
-    amount: 50000,
-    date: new Date('2023-01-15'),
-    description: 'Aporte inicial',
-    relatedInvestmentId: 'inv-1',
-  },
-  {
-    id: 'tx-2',
-    investorId: '1',
-    type: 'base_return',
-    amount: 1200,
-    date: new Date('2023-02-15'),
-    description: 'Rendimento Renda Base - Jan/2023',
-    relatedInvestmentId: 'inv-1',
-  },
-  {
-    id: 'tx-3',
-    investorId: '1',
-    type: 'performance_return',
-    amount: 2500,
-    date: new Date('2023-02-20'),
-    description: 'Rendimento Performance - Jan/2023',
-    relatedInvestmentId: 'inv-1',
-  },
-  {
-    id: 'tx-4',
-    investorId: '1',
-    type: 'deposit',
-    amount: 30000,
-    date: new Date('2023-03-01'),
-    description: 'Aporte recorrente',
-    relatedInvestmentId: 'inv-2',
-  },
-  {
-    id: 'tx-5',
-    investorId: '1',
-    type: 'reinvestment',
-    amount: 3700,
-    date: new Date('2023-03-15'),
-    description: 'Reinvestimento de rendimentos',
-  },
-  {
-    id: 'tx-6',
-    investorId: '1',
-    type: 'base_return',
-    amount: 2000,
-    date: new Date('2023-03-15'),
-    description: 'Rendimento Renda Base - Fev/2023',
-  },
-  {
-    id: 'tx-7',
-    investorId: '1',
-    type: 'performance_return',
-    amount: 3200,
-    date: new Date('2023-03-20'),
-    description: 'Rendimento Performance - Fev/2023',
-  },
-  {
-    id: 'tx-8',
-    investorId: '1',
-    type: 'deposit',
-    amount: 20000,
-    date: new Date('2023-06-10'),
-    description: 'Aporte único',
-    relatedInvestmentId: 'inv-3',
-  },
-  {
-    id: 'tx-9',
-    investorId: '1',
-    type: 'base_return',
-    amount: 2400,
-    date: new Date('2023-07-15'),
-    description: 'Rendimento Renda Base - Jun/2023',
-  },
-  {
-    id: 'tx-10',
-    investorId: '1',
-    type: 'performance_return',
-    amount: 4500,
-    date: new Date('2023-07-20'),
-    description: 'Rendimento Performance - Jun/2023',
-  },
-  // Transações Rick Dias - Apenas 1 depósito de 20 mil
-  {
-    id: 'tx-rick-1',
-    investorId: '4',
-    type: 'deposit',
-    amount: 20000,
-    date: new Date('2024-12-01'),
-    description: 'Aporte inicial - Dezembro/2024',
-    relatedInvestmentId: 'inv-rick-dez-2024',
-  },
-];
+// ZERADO - Transações serão criadas automaticamente quando admin adicionar investimentos
+export const mockTransactions: Transaction[] = [];
 
 // Mock Withdrawals
-export const mockWithdrawals: Withdrawal[] = [
-  {
-    id: 'wd-1',
-    investorId: '1',
-    amount: 15000,
-    requestedDate: new Date('2023-11-01'),
-    expectedPaymentDate: new Date('2023-12-01'),
-    status: 'pending',
-    type: 'partial',
-  },
-];
+// ZERADO - Resgates serão criados quando investidores solicitarem
+export const mockWithdrawals: Withdrawal[] = [];
 
 // Mock Pools
 export const mockPools: Pool[] = [
