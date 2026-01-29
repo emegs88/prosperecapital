@@ -7,8 +7,10 @@ import { Header } from './Header';
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAberturaConta = pathname?.includes('/abertura-conta');
+  const isLogin = pathname?.includes('/login');
   
-  if (isAberturaConta) {
+  // Páginas sem sidebar e header (mais profissionais)
+  if (isAberturaConta || isLogin) {
     return <>{children}</>;
   }
   
