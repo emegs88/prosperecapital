@@ -862,7 +862,9 @@ function DocumentUpload({
               Clique para selecionar ou arraste o arquivo aqui
             </p>
             <p className="text-xs text-prospere-gray-500 mt-1">
-              JPG, PNG ou PDF digital/escaneado (máx. 5MB)
+              {type === 'selfie' 
+                ? 'JPG ou PNG (máx. 5MB) - Tire uma foto ou envie uma imagem'
+                : 'JPG, PNG ou PDF digital/escaneado (máx. 5MB)'}
             </p>
           </div>
           <div className="flex gap-2">
