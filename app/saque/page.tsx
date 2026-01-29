@@ -14,18 +14,28 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/calculations';
 import { companyData } from '@/lib/companyData';
-import { mockInvestments, mockTransactions } from '@/lib/mockData';
+import { mockInvestments, mockTransactions, calculateInvestmentCurrentValue } from '@/lib/mockData';
+import { getCurrentUser, isAdmin } from '@/lib/auth';
 
 export default function SaquePage() {
+  const currentUser = getCurrentUser();
+  const userIsAdmin = isAdmin();
+  const userId = currentUser?.id || '1';
+  
   const [amount, setAmount] = useState('');
   const [accountType, setAccountType] = useState('same');
   
-  // Calculate available balance
-  const totalInvested = mockInvestments.reduce((sum, inv) => sum + inv.amount, 0);
-  const totalProfit = mockTransactions
-    .filter(tx => tx.type === 'base_return' || tx.type === 'performance_return')
-    .reduce((sum, tx) => sum + tx.amount, 0);
-  const availableBalance = totalInvested + totalProfit;
+  // Filtrar investimentos baseado no role
+  const userInvestments = userIsAdmin 
+    ? mockInvestments 
+    : mockInvestments.filter(inv => inv.investorId === userId);
+  
+  // Calculate available balance usando calculateInvestmentCurrentValue
+  const totalCurrentValue = userInvestments.reduce((sum, inv) => {
+    return sum + calculateInvestmentCurrentValue(inv);
+  }, 0);
+  
+  const availableBalance = totalCurrentValue;
   
   return (
     <div className="space-y-6">

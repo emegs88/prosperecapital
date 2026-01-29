@@ -26,7 +26,7 @@ import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { formatCurrency } from '@/lib/calculations';
-import { mockInvestments, mockTransactions } from '@/lib/mockData';
+import { mockInvestments, mockTransactions, calculateInvestmentCurrentValue } from '@/lib/mockData';
 import { getCurrentUser, isAdmin } from '@/lib/auth';
 
 const getMenuItems = (isAdmin: boolean) => {
@@ -68,12 +68,14 @@ export function Sidebar() {
     ? mockTransactions
     : mockTransactions.filter(tx => tx.investorId === userId);
   
-  // Calculate available balance
-  const totalInvested = userInvestments.reduce((sum, inv) => sum + inv.amount, 0);
-  const totalProfit = userTransactions
-    .filter(tx => tx.type === 'base_return' || tx.type === 'performance_return')
-    .reduce((sum, tx) => sum + tx.amount, 0);
-  const availableBalance = totalInvested + totalProfit;
+  // Calculate available balance usando calculateInvestmentCurrentValue para considerar rentabilidades mensais
+  const totalCurrentValue = userInvestments.reduce((sum, inv) => {
+    return sum + calculateInvestmentCurrentValue(inv);
+  }, 0);
+  
+  // Subtrair resgates pendentes
+  const pendingWithdrawals = 0; // Pode ser calculado se tiver mockWithdrawals
+  const availableBalance = totalCurrentValue - pendingWithdrawals;
   
   const menuItems = getMenuItems(userIsAdmin);
   
