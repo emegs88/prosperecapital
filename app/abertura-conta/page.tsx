@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -16,7 +17,9 @@ import {
   XCircle,
   Eye,
   Trash2,
-  AlertCircle
+  AlertCircle,
+  X,
+  RotateCcw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -59,6 +62,10 @@ export default function AberturaContaPage() {
   const [documents, setDocuments] = useState<DocumentFile[]>([]);
   const [validatingDocument, setValidatingDocument] = useState<string | null>(null);
   const [viewingDocument, setViewingDocument] = useState<DocumentFile | null>(null);
+  const [showCamera, setShowCamera] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
   const handleFileUpload = async (type: DocumentFile['type'], file: File) => {
     if (!validateFileSize(file, 5)) {
@@ -172,6 +179,68 @@ export default function AberturaContaPage() {
   const handleRemoveDocument = (id: string) => {
     setDocuments(documents.filter(d => d.id !== id));
   };
+
+  // Função para iniciar a câmera
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { 
+          facingMode: 'user', // Câmera frontal no celular
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      });
+      setCameraStream(stream);
+      setShowCamera(true);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (error) {
+      console.error('Erro ao acessar câmera:', error);
+      alert('Não foi possível acessar a câmera. Verifique as permissões do navegador.');
+    }
+  };
+
+  // Função para parar a câmera
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    setShowCamera(false);
+  };
+
+  // Função para capturar foto
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      const context = canvas.getContext('2d');
+      
+      if (context) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0);
+        
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const file = new File([blob], `selfie-${Date.now()}.jpg`, { type: 'image/jpeg' });
+            handleFileUpload('selfie', file);
+            stopCamera();
+          }
+        }, 'image/jpeg', 0.95);
+      }
+    }
+  };
+
+  // Limpar stream quando componente desmontar
+  useEffect(() => {
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [cameraStream]);
 
   const canProceed = () => {
     if (step === 1) {
@@ -450,6 +519,7 @@ export default function AberturaContaPage() {
                     isImage={true}
                     onView={setViewingDocument}
                     isValidating={validatingDocument !== null}
+                    onStartCamera={startCamera}
                   />
                 </div>
               </div>
@@ -565,6 +635,81 @@ export default function AberturaContaPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Camera Modal */}
+      <AnimatePresence>
+        {showCamera && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black z-50 flex items-center justify-center"
+          >
+            <div className="relative w-full h-full max-w-4xl max-h-screen flex flex-col">
+              {/* Header */}
+              <div className="absolute top-0 left-0 right-0 z-10 bg-black/50 p-4 flex items-center justify-between">
+                <h3 className="text-white font-bold text-lg">Tire sua selfie</h3>
+                <button
+                  onClick={stopCamera}
+                  className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                >
+                  <X className="w-6 h-6 text-white" />
+                </button>
+              </div>
+
+              {/* Video Preview */}
+              <div className="flex-1 flex items-center justify-center relative">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-full object-contain"
+                />
+                <canvas ref={canvasRef} className="hidden" />
+                
+                {/* Overlay com instruções */}
+                <div className="absolute bottom-20 left-0 right-0 text-center">
+                  <p className="text-white text-lg font-medium mb-2">
+                    Segure sua CNH ou RG visível na foto
+                  </p>
+                  <p className="text-white/80 text-sm">
+                    Posicione seu rosto e o documento no centro
+                  </p>
+                </div>
+              </div>
+
+              {/* Controls */}
+              <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-6 flex items-center justify-center gap-4">
+                <button
+                  onClick={stopCamera}
+                  className="px-6 py-3 bg-prospere-gray-700 hover:bg-prospere-gray-600 text-white rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <X className="w-5 h-5" />
+                  Cancelar
+                </button>
+                <button
+                  onClick={capturePhoto}
+                  className="w-20 h-20 bg-prospere-red hover:bg-red-700 rounded-full border-4 border-white flex items-center justify-center transition-colors shadow-lg"
+                >
+                  <Camera className="w-10 h-10 text-white" />
+                </button>
+                <button
+                  onClick={() => {
+                    // Trocar entre câmera frontal e traseira (se disponível)
+                    stopCamera();
+                    setTimeout(() => startCamera(), 100);
+                  }}
+                  className="px-6 py-3 bg-prospere-gray-700 hover:bg-prospere-gray-600 text-white rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <RotateCcw className="w-5 h-5" />
+                  Trocar Câmera
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -579,6 +724,7 @@ interface DocumentUploadProps {
   isImage?: boolean;
   onView?: (document: DocumentFile) => void;
   isValidating?: boolean;
+  onStartCamera?: () => void;
 }
 
 function DocumentUpload({
@@ -591,6 +737,7 @@ function DocumentUpload({
   isImage = false,
   onView,
   isValidating = false,
+  onStartCamera,
 }: DocumentUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
 
@@ -719,19 +866,36 @@ function DocumentUpload({
               JPG, PNG ou PDF digital/escaneado (máx. 5MB)
             </p>
           </div>
-          <Button variant="outline" size="sm" disabled={isValidating}>
-            {isValidating ? (
-              <>
-                <div className="w-4 h-4 border-2 border-prospere-gray-400 border-t-transparent rounded-full animate-spin mr-2" />
-                Validando...
-              </>
-            ) : (
-              <>
-                <Upload className="w-4 h-4 mr-2" />
-                Selecionar Arquivo
-              </>
+          <div className="flex gap-2">
+            {type === 'selfie' && onStartCamera && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onStartCamera();
+                }}
+                disabled={isValidating}
+                className="px-4 py-2 bg-prospere-red hover:bg-red-700 disabled:bg-prospere-gray-700 disabled:cursor-not-allowed text-white border border-prospere-red rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
+              >
+                <Camera className="w-4 h-4" />
+                Tirar Foto
+              </button>
             )}
-          </Button>
+            <Button variant="outline" size="sm" disabled={isValidating}>
+              {isValidating ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-prospere-gray-400 border-t-transparent rounded-full animate-spin mr-2" />
+                  Validando...
+                </>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4 mr-2" />
+                  Selecionar Arquivo
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </label>
     </div>
