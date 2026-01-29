@@ -108,7 +108,7 @@ export async function validateCEP(cep: string): Promise<{
 
 /**
  * Simula OCR de documento (CNH/RG) com extração de dados
- * Em produção, integraria com serviço de OCR real (Google Vision, AWS Textract, Tesseract.js, etc)
+ * Em produção, integraria com serviço de OCR real (Google Vision, AWS Textract, Tesseract.js, pdf-parse, etc)
  * 
  * Esta função simula a extração de:
  * - Nome completo
@@ -123,37 +123,142 @@ export async function extractDocumentData(file: File): Promise<DocumentValidatio
   
   if (!validateFileSize(file, 5)) {
     errors.push('Arquivo muito grande. Máximo 5MB.');
+    return {
+      isValid: false,
+      errors,
+      extractedData: undefined,
+    };
   }
   
   // Aceita imagens (JPG, PNG) e PDFs (digitais ou escaneados)
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
   if (!validateFileType(file, allowedTypes)) {
     errors.push('Formato inválido. Use JPG, PNG ou PDF (digital ou escaneado).');
+    return {
+      isValid: false,
+      errors,
+      extractedData: undefined,
+    };
   }
   
+  // Detectar tipo de arquivo
+  const isPDF = file.type === 'application/pdf';
+  const isImage = file.type.startsWith('image/');
+  
   // Simulação de processamento OCR com delay realista
-  await new Promise(resolve => setTimeout(resolve, 1500));
+  // PDFs podem levar mais tempo para processar
+  const processingTime = isPDF ? 2000 : 1500;
+  await new Promise(resolve => setTimeout(resolve, processingTime));
   
   // Simulação de extração de dados via OCR
   // Em produção, aqui faria:
-  // 1. Upload da imagem para API de OCR (Google Vision, AWS Textract, Tesseract.js)
-  // 2. Processamento do texto extraído
-  // 3. Extração de campos específicos usando regex e validações
+  // Para PDFs:
+  //   - Usar pdf-parse ou pdf.js para extrair texto
+  //   - Processar o texto extraído com regex
+  // Para Imagens:
+  //   - Upload para API de OCR (Google Vision, AWS Textract, Tesseract.js)
+  //   - Processar o texto extraído
+  //   - Extração de campos específicos usando regex e validações
   
-  // Dados simulados extraídos do OCR
-  // Em produção, esses dados viriam do processamento real do documento
-  const mockExtractedData = {
-    // Exemplo de dados que seriam extraídos de uma CNH/RG brasileira
-    name: 'JOÃO SILVA SANTOS', // Nome completo em maiúsculas (padrão CNH)
-    cpf: '12345678901', // CPF sem formatação
-    birthDate: '1985-03-15', // Data de nascimento no formato YYYY-MM-DD
-    rg: '123456789', // RG (se disponível)
-    cnh: '12345678901', // Número da CNH (se for CNH)
+  // Simular extração de texto do documento
+  // Em produção, isso viria do processamento real
+  let extractedText = '';
+  if (isPDF) {
+    // Simular texto extraído de PDF digital ou escaneado
+    extractedText = `
+      BRASIL
+      CNH - CARTEIRA NACIONAL DE HABILITAÇÃO
+      NOME: JOÃO SILVA SANTOS
+      CPF: 123.456.789-09
+      DATA DE NASCIMENTO: 15/03/1985
+      RG: 12.345.678-9
+      CNH: 12345678901
+      CATEGORIA: B
+    `;
+  } else {
+    // Simular texto extraído de imagem (OCR)
+    extractedText = `
+      BRASIL
+      CNH - CARTEIRA NACIONAL DE HABILITAÇÃO
+      NOME: JOÃO SILVA SANTOS
+      CPF: 123.456.789-09
+      DATA DE NASCIMENTO: 15/03/1985
+      RG: 12.345.678-9
+      CNH: 12345678901
+    `;
+  }
+  
+  // Extrair dados usando regex (simulação do que seria feito em produção)
+  const extractCPF = (text: string): string | null => {
+    // Procura CPF no formato XXX.XXX.XXX-XX ou apenas números
+    const cpfRegex = /(\d{3}\.?\d{3}\.?\d{3}-?\d{2})/g;
+    const matches = text.match(cpfRegex);
+    if (matches && matches.length > 0) {
+      return matches[0].replace(/\D/g, ''); // Remove formatação
+    }
+    return null;
   };
   
-  // Validação dos dados extraídos
+  const extractName = (text: string): string | null => {
+    // Procura nome após "NOME:" ou padrões similares
+    const nameRegex = /NOME[:\s]+([A-ZÁÉÍÓÚÇ\s]+)/i;
+    const match = text.match(nameRegex);
+    if (match && match[1]) {
+      return match[1].trim().toUpperCase();
+    }
+    return null;
+  };
+  
+  const extractBirthDate = (text: string): string | null => {
+    // Procura data no formato DD/MM/YYYY
+    const dateRegex = /(\d{2}\/\d{2}\/\d{4})/g;
+    const matches = text.match(dateRegex);
+    if (matches && matches.length > 0) {
+      const [day, month, year] = matches[0].split('/');
+      return `${year}-${month}-${day}`; // Converter para YYYY-MM-DD
+    }
+    return null;
+  };
+  
+  const extractRG = (text: string): string | null => {
+    const rgRegex = /RG[:\s]+([\d\.\-]+)/i;
+    const match = text.match(rgRegex);
+    if (match && match[1]) {
+      return match[1].replace(/\D/g, '');
+    }
+    return null;
+  };
+  
+  const extractCNH = (text: string): string | null => {
+    const cnhRegex = /CNH[:\s]+(\d+)/i;
+    const match = text.match(cnhRegex);
+    if (match && match[1]) {
+      return match[1];
+    }
+    return null;
+  };
+  
+  // Extrair dados do texto simulado
+  const extractedCPF = extractCPF(extractedText) || '12345678909'; // CPF válido como fallback
+  const extractedName = extractName(extractedText) || 'JOÃO SILVA SANTOS';
+  const extractedBirthDate = extractBirthDate(extractedText) || '1985-03-15';
+  const extractedRG = extractRG(extractedText) || '123456789';
+  const extractedCNH = extractCNH(extractedText) || '12345678901';
+  
+  // Dados extraídos
+  const mockExtractedData = {
+    name: extractedName,
+    cpf: extractedCPF,
+    birthDate: extractedBirthDate,
+    rg: extractedRG,
+    cnh: extractedCNH,
+  };
+  
+  // Validação dos dados extraídos (aviso, mas não bloqueia)
+  const warnings: string[] = [];
   if (mockExtractedData.cpf && !validateCPF(mockExtractedData.cpf)) {
-    errors.push('CPF extraído do documento é inválido. Verifique o documento.');
+    warnings.push('CPF extraído do documento pode estar incorreto. Verifique o documento.');
+    // Não adiciona como erro crítico, apenas aviso
   }
   
   // Validação da data de nascimento
@@ -163,23 +268,23 @@ export async function extractDocumentData(file: File): Promise<DocumentValidatio
     const age = today.getFullYear() - birthDate.getFullYear();
     
     if (age < 18 || age > 120) {
-      errors.push('Data de nascimento extraída parece inválida. Verifique o documento.');
+      warnings.push('Data de nascimento extraída pode estar incorreta. Verifique o documento.');
     }
   }
   
-  // Se houver erros críticos, não retorna dados extraídos
-  const extractedData = errors.length === 0 ? {
+  // Retorna dados extraídos mesmo com avisos (usuário pode corrigir manualmente)
+  const extractedData = {
     cpf: formatCPF(mockExtractedData.cpf),
     name: mockExtractedData.name,
     birthDate: mockExtractedData.birthDate,
     rg: mockExtractedData.rg,
     cnh: mockExtractedData.cnh,
-  } : undefined;
+  };
   
   return {
-    isValid: errors.length === 0,
-    errors,
-    extractedData,
+    isValid: errors.length === 0, // Válido se não houver erros críticos
+    errors: [...errors, ...warnings], // Inclui avisos para o usuário verificar
+    extractedData, // Sempre retorna dados extraídos (mesmo que com avisos)
   };
 }
 

@@ -446,6 +446,14 @@ export default function AdminPage() {
                           };
                           setInvestorDocuments([...investorDocuments.filter(d => d.type !== type), newDoc]);
                           
+                          // Separar erros críticos de avisos
+                          const criticalErrors = result.errors.filter((err: string) => 
+                            err.includes('muito grande') || err.includes('Formato inválido')
+                          );
+                          const warnings = result.errors.filter((err: string) => 
+                            !err.includes('muito grande') && !err.includes('Formato inválido')
+                          );
+                          
                           // Preencher automaticamente os campos com dados extraídos do OCR
                           if (result.extractedData) {
                             const updates: any = { ...newInvestor };
@@ -473,12 +481,18 @@ export default function AdminPage() {
                               if (result.extractedData.cpf) extractedFields.push('CPF');
                               if (result.extractedData.birthDate) extractedFields.push('Data de Nascimento');
                               
-                              alert(`✅ OCR concluído!\n\nDados extraídos automaticamente:\n${extractedFields.join(', ')}\n\nVerifique se os dados estão corretos.`);
+                              let message = `✅ OCR concluído!\n\nDados extraídos automaticamente:\n${extractedFields.join(', ')}\n\n`;
+                              if (warnings.length > 0) {
+                                message += `⚠️ Atenção:\n${warnings.join('\n')}\n\n`;
+                              }
+                              message += 'Verifique se os dados estão corretos e ajuste se necessário.';
+                              alert(message);
                             }
                           }
                           
-                          if (result.errors.length > 0) {
-                            alert(`⚠️ Atenção:\n${result.errors.join('\n')}`);
+                          // Mostrar apenas erros críticos como alerta bloqueante
+                          if (criticalErrors.length > 0) {
+                            alert(`❌ Erro:\n${criticalErrors.join('\n')}`);
                           }
                         } catch (error) {
                           alert('Erro ao processar documento. Tente novamente.');

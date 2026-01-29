@@ -109,8 +109,21 @@ export default function AberturaContaPage() {
           if (extractedData.cpf) extractedFields.push('CPF');
           if (extractedData.birthDate) extractedFields.push('Data de Nascimento');
           
+          // Separar erros críticos de avisos
+          const criticalErrors = validationErrors.filter(err => 
+            err.includes('muito grande') || err.includes('Formato inválido')
+          );
+          const warnings = validationErrors.filter(err => 
+            !err.includes('muito grande') && !err.includes('Formato inválido')
+          );
+          
           if (extractedFields.length > 0) {
-            alert(`✅ OCR concluído!\n\nDados extraídos automaticamente:\n${extractedFields.join(', ')}\n\nVerifique se os dados estão corretos.`);
+            let message = `✅ OCR concluído!\n\nDados extraídos automaticamente:\n${extractedFields.join(', ')}\n\n`;
+            if (warnings.length > 0) {
+              message += `⚠️ Atenção:\n${warnings.join('\n')}\n\n`;
+            }
+            message += 'Verifique se os dados estão corretos e ajuste se necessário.';
+            alert(message);
           }
         }
       } else if (type === 'selfie') {
@@ -119,6 +132,17 @@ export default function AberturaContaPage() {
         validationErrors = result.errors;
       }
 
+      // Separar erros críticos de avisos
+      const criticalErrors = validationErrors.filter(err => 
+        err.includes('muito grande') || err.includes('Formato inválido')
+      );
+      const warnings = validationErrors.filter(err => 
+        !err.includes('muito grande') && !err.includes('Formato inválido')
+      );
+      
+      // Documento é considerado válido se não houver erros críticos
+      const isValid = criticalErrors.length === 0;
+      
       const newDoc: DocumentFile = {
         id: Date.now().toString(),
         name: file.name,
@@ -127,15 +151,16 @@ export default function AberturaContaPage() {
         preview: type === 'selfie' || file.type.startsWith('image/') 
           ? URL.createObjectURL(file) 
           : undefined,
-        status: validationErrors.length === 0 ? 'uploaded' : 'rejected',
+        status: isValid ? 'uploaded' : 'rejected',
         validationErrors: validationErrors.length > 0 ? validationErrors : undefined,
         extractedData,
       };
       
       setDocuments([...documents.filter(d => d.type !== type), newDoc]);
       
-      if (validationErrors.length > 0) {
-        alert(`⚠️ Atenção:\n${validationErrors.join('\n')}`);
+      // Mostrar apenas erros críticos como alerta bloqueante
+      if (criticalErrors.length > 0) {
+        alert(`❌ Erro:\n${criticalErrors.join('\n')}`);
       }
     } catch (error) {
       alert('Erro ao processar documento. Tente novamente.');
