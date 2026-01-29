@@ -311,16 +311,14 @@ export async function validateSelfie(
   // Em produção, usaria biblioteca como face-api.js ou API de reconhecimento facial
   const faceDetected = true; // Simulado
   
-  // Simulação de verificação se há documento na selfie
-  const hasDocument = documentFile !== undefined;
+  // Selfie normal - não precisa segurar documento
+  const hasDocument = false; // Não é mais obrigatório
   
   if (!faceDetected) {
     errors.push('Rosto não detectado na imagem. Certifique-se de que seu rosto está visível.');
   }
   
-  if (!hasDocument) {
-    errors.push('Documento não detectado na selfie. Segure sua CNH visível na foto.');
-  }
+  // Removida a validação que exigia documento na selfie
   
   return {
     isValid: errors.length === 0,

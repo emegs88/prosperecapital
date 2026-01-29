@@ -197,8 +197,7 @@ export default function AdminPage() {
             const file = new File([blob], `selfie-${Date.now()}.jpg`, { type: 'image/jpeg' });
             // Processar selfie
             setValidatingDocument(file.name);
-            const cnhDoc = investorDocuments.find(d => d.type === 'cnh' || d.type === 'rg');
-            validateSelfie(file, cnhDoc?.file).then((result) => {
+            validateSelfie(file).then((result) => {
               if (result.errors.length > 0) {
                 alert(`Erros encontrados:\n${result.errors.join('\n')}`);
               }
@@ -630,11 +629,11 @@ export default function AdminPage() {
                   
                   <div>
                     <label className="block text-sm font-medium text-prospere-gray-300 mb-2">
-                      Selfie com Documento *
+                      Selfie *
                     </label>
                     <AdminDocumentUpload
                       type="selfie"
-                      label="Selfie"
+                      label="Tire uma selfie"
                       icon={<Camera className="w-6 h-6" />}
                       isImage={true}
                       onUpload={async (type, file) => {
@@ -649,8 +648,7 @@ export default function AdminPage() {
                         }
                         setValidatingDocument(file.name);
                         try {
-                          const cnhDoc = investorDocuments.find(d => d.type === 'cnh' || d.type === 'rg');
-                          const result = await validateSelfie(file, cnhDoc?.file);
+                          const result = await validateSelfie(file);
                           if (result.errors.length > 0) {
                             alert(`Erros encontrados:\n${result.errors.join('\n')}`);
                           }

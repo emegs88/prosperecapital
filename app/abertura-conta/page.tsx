@@ -134,8 +134,7 @@ export default function AberturaContaPage() {
           }
         }
       } else if (type === 'selfie') {
-        const cnhDoc = documents.find(d => d.type === 'cnh');
-        const result = await validateSelfie(file, cnhDoc?.file);
+        const result = await validateSelfie(file);
         validationErrors = result.errors;
       }
 
@@ -507,11 +506,11 @@ export default function AberturaContaPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-prospere-gray-300 mb-2">
-                    Selfie com Documento *
+                    Selfie *
                   </label>
                   <DocumentUpload
                     type="selfie"
-                    label="Selfie segurando sua CNH ou RG"
+                    label="Tire uma selfie"
                     icon={<Camera className="w-6 h-6" />}
                     onUpload={handleFileUpload}
                     document={documents.find(d => d.type === 'selfie')}
@@ -671,10 +670,10 @@ export default function AberturaContaPage() {
                 {/* Overlay com instruções */}
                 <div className="absolute bottom-20 left-0 right-0 text-center">
                   <p className="text-white text-lg font-medium mb-2">
-                    Segure sua CNH ou RG visível na foto
+                    Tire uma selfie
                   </p>
                   <p className="text-white/80 text-sm">
-                    Posicione seu rosto e o documento no centro
+                    Posicione seu rosto no centro da tela
                   </p>
                 </div>
               </div>
