@@ -32,6 +32,14 @@ export const mockUsers: User[] = [
     role: 'investor',
     createdAt: new Date('2023-01-15'),
   },
+  {
+    id: '3',
+    email: 'rickdiasdiasdias@gmail.com',
+    password: 'PROSPEREVIDA2026',
+    name: 'Rick Dias',
+    role: 'investor',
+    createdAt: new Date('2024-12-01'),
+  },
 ];
 
 /**

@@ -34,6 +34,13 @@ export const mockInvestors: Investor[] = [
     cpf: '111.222.333-44',
     createdAt: new Date('2023-03-15'),
   },
+  {
+    id: '4',
+    name: 'Rick Dias',
+    email: 'rickdiasdiasdias@gmail.com',
+    cpf: '123.456.789-00',
+    createdAt: new Date('2024-12-01'),
+  },
 ];
 
 // Mock Monthly Returns (rentabilidades definidas pelo admin)
@@ -103,6 +110,34 @@ export const mockInvestments: Investment[] = [
     date: new Date('2024-11-01'),
     status: 'active',
     monthlyReturns: mockMonthlyReturns.filter(r => r.investmentId === 'inv-nov-2024'),
+  },
+  // Investimento Rick Dias - Dezembro/2024
+  {
+    id: 'inv-rick-dez-2024',
+    investorId: '4',
+    amount: 20000,
+    type: 'single',
+    pool: 'mixed',
+    date: new Date('2024-12-01'),
+    status: 'active',
+    monthlyReturns: [
+      {
+        id: 'ret-rick-dez',
+        investmentId: 'inv-rick-dez-2024',
+        month: '2024-12',
+        returnPercentage: 18.0,
+        applied: true,
+        createdAt: new Date('2024-12-15'),
+      },
+      {
+        id: 'ret-rick-jan',
+        investmentId: 'inv-rick-dez-2024',
+        month: '2025-01',
+        returnPercentage: 18.6,
+        applied: true,
+        createdAt: new Date('2025-01-15'),
+      },
+    ],
   },
 ];
 
@@ -192,6 +227,34 @@ export const mockTransactions: Transaction[] = [
     amount: 4500,
     date: new Date('2023-07-20'),
     description: 'Rendimento Performance - Jun/2023',
+  },
+  // Transações Rick Dias
+  {
+    id: 'tx-rick-1',
+    investorId: '4',
+    type: 'deposit',
+    amount: 20000,
+    date: new Date('2024-12-01'),
+    description: 'Aporte inicial - Dezembro/2024',
+    relatedInvestmentId: 'inv-rick-dez-2024',
+  },
+  {
+    id: 'tx-rick-2',
+    investorId: '4',
+    type: 'base_return',
+    amount: 3600,
+    date: new Date('2024-12-15'),
+    description: 'Rendimento Renda Base - Dez/2024 (18%)',
+    relatedInvestmentId: 'inv-rick-dez-2024',
+  },
+  {
+    id: 'tx-rick-3',
+    investorId: '4',
+    type: 'performance_return',
+    amount: 4400,
+    date: new Date('2025-01-15'),
+    description: 'Rendimento Performance - Jan/2025 (18.6%)',
+    relatedInvestmentId: 'inv-rick-dez-2024',
   },
 ];
 
