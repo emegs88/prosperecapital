@@ -15,6 +15,8 @@ import {
   Download
 } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/calculations';
+import { getCurrentUser, isAdmin } from '@/lib/auth';
+import { mockTransactions } from '@/lib/mockData';
 import { motion } from 'framer-motion';
 
 interface Deposit {
@@ -26,34 +28,28 @@ interface Deposit {
   updatedAt?: Date;
 }
 
-const mockDeposits: Deposit[] = [
-  {
-    id: '260998',
-    amount: 60000,
-    method: 'Transferência PIX',
-    status: 'pending',
-    date: new Date('2026-01-28T19:16:00'),
-  },
-  {
-    id: '260997',
-    amount: 50000,
-    method: 'TED/DOC',
-    status: 'approved',
-    date: new Date('2026-01-25T14:30:00'),
-    updatedAt: new Date('2026-01-25T15:00:00'),
-  },
-  {
-    id: '260996',
-    amount: 30000,
-    method: 'Transferência PIX',
-    status: 'approved',
-    date: new Date('2026-01-20T10:15:00'),
-    updatedAt: new Date('2026-01-20T10:20:00'),
-  },
-];
+// Depósitos filtrados por usuário (será preenchido dinamicamente)
+const mockDeposits: Deposit[] = [];
 
 export default function MeusDepositosPage() {
+  const currentUser = getCurrentUser();
+  const userIsAdmin = isAdmin();
+  const userId = currentUser?.id || '1';
   const [showFilters, setShowFilters] = useState(false);
+  
+  // Filtrar depósitos baseado no usuário
+  const userDeposits = userIsAdmin
+    ? mockDeposits
+    : mockTransactions
+        .filter(tx => tx.investorId === userId && tx.type === 'deposit')
+        .map(tx => ({
+          id: tx.id,
+          amount: tx.amount,
+          method: 'Transferência PIX',
+          status: 'approved' as const,
+          date: tx.date,
+          updatedAt: tx.date,
+        }));
   
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -92,7 +88,12 @@ export default function MeusDepositosPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-white mb-2">Meus Depósitos</h1>
-        <p className="text-prospere-gray-400">You have a total of deposits.</p>
+        <p className="text-prospere-gray-400">
+          {userDeposits.length === 0 
+            ? 'Você ainda não realizou depósitos'
+            : `Total de ${userDeposits.length} depósito${userDeposits.length > 1 ? 's' : ''}`
+          }
+        </p>
       </div>
       
       <Card>
@@ -144,7 +145,14 @@ export default function MeusDepositosPage() {
               </tr>
             </thead>
             <tbody>
-              {mockDeposits.map((deposit) => (
+              {userDeposits.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center">
+                    <p className="text-prospere-gray-400">Nenhum depósito encontrado</p>
+                  </td>
+                </tr>
+              ) : (
+                userDeposits.map((deposit) => (
                 <motion.tr
                   key={deposit.id}
                   initial={{ opacity: 0, y: 10 }}
@@ -197,13 +205,14 @@ export default function MeusDepositosPage() {
                     </div>
                   </td>
                 </motion.tr>
-              ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>
         
         <div className="mt-4 text-sm text-prospere-gray-400">
-          A mostrar {mockDeposits.length} resultados
+          A mostrar {userDeposits.length} resultado{userDeposits.length !== 1 ? 's' : ''}
         </div>
       </Card>
     </div>

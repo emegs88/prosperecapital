@@ -112,6 +112,7 @@ export const mockInvestments: Investment[] = [
     monthlyReturns: mockMonthlyReturns.filter(r => r.investmentId === 'inv-nov-2024'),
   },
   // Investimento Rick Dias - Dezembro/2024
+  // Investiu 20 mil, hoje está em 28 mil (8 mil de rentabilidade = 40%)
   {
     id: 'inv-rick-dez-2024',
     investorId: '4',
@@ -125,7 +126,7 @@ export const mockInvestments: Investment[] = [
         id: 'ret-rick-dez',
         investmentId: 'inv-rick-dez-2024',
         month: '2024-12',
-        returnPercentage: 18.0,
+        returnPercentage: 20.0, // 20% = 4.000 de 20.000
         applied: true,
         createdAt: new Date('2024-12-15'),
       },
@@ -133,7 +134,7 @@ export const mockInvestments: Investment[] = [
         id: 'ret-rick-jan',
         investmentId: 'inv-rick-dez-2024',
         month: '2025-01',
-        returnPercentage: 18.6,
+        returnPercentage: 16.67, // 16.67% de 24.000 = 4.000, totalizando 28.000
         applied: true,
         createdAt: new Date('2025-01-15'),
       },
@@ -228,7 +229,7 @@ export const mockTransactions: Transaction[] = [
     date: new Date('2023-07-20'),
     description: 'Rendimento Performance - Jun/2023',
   },
-  // Transações Rick Dias
+  // Transações Rick Dias - Apenas 1 depósito de 20 mil
   {
     id: 'tx-rick-1',
     investorId: '4',
@@ -236,24 +237,6 @@ export const mockTransactions: Transaction[] = [
     amount: 20000,
     date: new Date('2024-12-01'),
     description: 'Aporte inicial - Dezembro/2024',
-    relatedInvestmentId: 'inv-rick-dez-2024',
-  },
-  {
-    id: 'tx-rick-2',
-    investorId: '4',
-    type: 'base_return',
-    amount: 3600,
-    date: new Date('2024-12-15'),
-    description: 'Rendimento Renda Base - Dez/2024 (18%)',
-    relatedInvestmentId: 'inv-rick-dez-2024',
-  },
-  {
-    id: 'tx-rick-3',
-    investorId: '4',
-    type: 'performance_return',
-    amount: 4400,
-    date: new Date('2025-01-15'),
-    description: 'Rendimento Performance - Jan/2025 (18.6%)',
     relatedInvestmentId: 'inv-rick-dez-2024',
   },
 ];
