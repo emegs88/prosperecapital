@@ -66,6 +66,18 @@ export default function AberturaContaPage() {
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  
+  // Estados para verificação de email e WhatsApp
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [emailCode, setEmailCode] = useState('');
+  const [phoneCode, setPhoneCode] = useState('');
+  const [sendingEmailCode, setSendingEmailCode] = useState(false);
+  const [sendingPhoneCode, setSendingPhoneCode] = useState(false);
+  const [verifyingEmail, setVerifyingEmail] = useState(false);
+  const [verifyingPhone, setVerifyingPhone] = useState(false);
+  const [emailCodeSent, setEmailCodeSent] = useState(false);
+  const [phoneCodeSent, setPhoneCodeSent] = useState(false);
 
   const handleFileUpload = async (type: DocumentFile['type'], file: File) => {
     if (!validateFileSize(file, 5)) {
@@ -246,9 +258,114 @@ export default function AberturaContaPage() {
     };
   }, [cameraStream]);
 
+  // Função para enviar código de verificação
+  const sendVerificationCode = async (type: 'email' | 'phone') => {
+    if (type === 'email' && !email) {
+      alert('Preencha o email primeiro');
+      return;
+    }
+    if (type === 'phone' && !phone) {
+      alert('Preencha o telefone primeiro');
+      return;
+    }
+
+    if (type === 'email') {
+      setSendingEmailCode(true);
+    } else {
+      setSendingPhoneCode(true);
+    }
+
+    try {
+      const response = await fetch('/api/verification/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: type === 'email' ? email : undefined,
+          phone: type === 'phone' ? phone : undefined,
+          type,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        if (type === 'email') {
+          setEmailCodeSent(true);
+          alert(`✅ Código enviado para ${email}\n\n${process.env.NODE_ENV === 'development' ? `Código (dev): ${data.code}` : 'Verifique sua caixa de entrada'}`);
+        } else {
+          setPhoneCodeSent(true);
+          alert(`✅ Código enviado para ${phone}\n\n${process.env.NODE_ENV === 'development' ? `Código (dev): ${data.code}` : 'Verifique seu WhatsApp'}`);
+        }
+      } else {
+        alert(`Erro ao enviar código: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Erro ao enviar código:', error);
+      alert('Erro ao enviar código. Tente novamente.');
+    } finally {
+      if (type === 'email') {
+        setSendingEmailCode(false);
+      } else {
+        setSendingPhoneCode(false);
+      }
+    }
+  };
+
+  // Função para verificar código
+  const verifyCode = async (type: 'email' | 'phone', code: string) => {
+    if (!code || code.length !== 6) {
+      alert('Digite o código de 6 dígitos');
+      return;
+    }
+
+    if (type === 'email') {
+      setVerifyingEmail(true);
+    } else {
+      setVerifyingPhone(true);
+    }
+
+    try {
+      const response = await fetch('/api/verification/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: type === 'email' ? email : undefined,
+          phone: type === 'phone' ? phone : undefined,
+          code,
+          type,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.verified) {
+        if (type === 'email') {
+          setEmailVerified(true);
+          setEmailCode('');
+          alert('✅ Email verificado com sucesso!');
+        } else {
+          setPhoneVerified(true);
+          setPhoneCode('');
+          alert('✅ WhatsApp verificado com sucesso!');
+        }
+      } else {
+        alert(`Código inválido. ${data.error || 'Tente novamente.'}`);
+      }
+    } catch (error) {
+      console.error('Erro ao verificar código:', error);
+      alert('Erro ao verificar código. Tente novamente.');
+    } finally {
+      if (type === 'email') {
+        setVerifyingEmail(false);
+      } else {
+        setVerifyingPhone(false);
+      }
+    }
+  };
+
   const canProceed = () => {
     if (step === 1) {
-      return name && email && phone && cpf && birthDate && cep && street && number && neighborhood && city && state;
+      return name && email && phone && cpf && birthDate && cep && street && number && neighborhood && city && state && emailVerified && phoneVerified;
     }
     if (step === 2) {
       return documents.some(d => d.type === 'cnh' || d.type === 'rg') && documents.some(d => d.type === 'selfie');
@@ -344,26 +461,168 @@ export default function AberturaContaPage() {
                   value={birthDate}
                   onChange={(e) => setBirthDate(e.target.value)}
                 />
-                <Input
-                  label="E-mail *"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="seu@email.com"
-                />
-                <Input
-                  label="Celular *"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, '');
-                    const formatted = value.length <= 11 
-                      ? value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')
-                      : phone;
-                    setPhone(formatted);
-                  }}
-                  placeholder="(00) 00000-0000"
-                />
+                <div>
+                  <Input
+                    label="E-mail *"
+                    type="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setEmailVerified(false);
+                      setEmailCodeSent(false);
+                    }}
+                    placeholder="seu@email.com"
+                    disabled={emailVerified}
+                  />
+                  {!emailVerified && (
+                    <div className="mt-2 space-y-2">
+                      {!emailCodeSent ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => sendVerificationCode('email')}
+                          disabled={!email || sendingEmailCode}
+                          className="w-full"
+                        >
+                          {sendingEmailCode ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-prospere-gray-400 border-t-transparent rounded-full animate-spin mr-2" />
+                              Enviando...
+                            </>
+                          ) : (
+                            <>
+                              <Mail className="w-4 h-4 mr-2" />
+                              Enviar Código por Email
+                            </>
+                          )}
+                        </Button>
+                      ) : (
+                        <div className="space-y-2">
+                          <Input
+                            type="text"
+                            value={emailCode}
+                            onChange={(e) => setEmailCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                            placeholder="Digite o código de 6 dígitos"
+                            maxLength={6}
+                            className="text-center text-lg tracking-widest"
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => verifyCode('email', emailCode)}
+                              disabled={emailCode.length !== 6 || verifyingEmail}
+                              className="flex-1"
+                            >
+                              {verifyingEmail ? 'Verificando...' : 'Verificar'}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setEmailCodeSent(false);
+                                setEmailCode('');
+                              }}
+                            >
+                              Reenviar
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                      {emailVerified && (
+                        <div className="flex items-center gap-2 text-green-400 text-sm">
+                          <CheckCircle2 className="w-4 h-4" />
+                          Email verificado
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <Input
+                    label="Telefone/WhatsApp *"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '');
+                      const formatted = value.length <= 11 
+                        ? value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')
+                        : phone;
+                      setPhone(formatted);
+                      setPhoneVerified(false);
+                      setPhoneCodeSent(false);
+                    }}
+                    placeholder="(00) 00000-0000"
+                    disabled={phoneVerified}
+                  />
+                  {!phoneVerified && (
+                    <div className="mt-2 space-y-2">
+                      {!phoneCodeSent ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => sendVerificationCode('phone')}
+                          disabled={!phone || sendingPhoneCode}
+                          className="w-full"
+                        >
+                          {sendingPhoneCode ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-prospere-gray-400 border-t-transparent rounded-full animate-spin mr-2" />
+                              Enviando...
+                            </>
+                          ) : (
+                            <>
+                              <Phone className="w-4 h-4 mr-2" />
+                              Enviar Código por WhatsApp
+                            </>
+                          )}
+                        </Button>
+                      ) : (
+                        <div className="space-y-2">
+                          <Input
+                            type="text"
+                            value={phoneCode}
+                            onChange={(e) => setPhoneCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                            placeholder="Digite o código de 6 dígitos"
+                            maxLength={6}
+                            className="text-center text-lg tracking-widest"
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => verifyCode('phone', phoneCode)}
+                              disabled={phoneCode.length !== 6 || verifyingPhone}
+                              className="flex-1"
+                            >
+                              {verifyingPhone ? 'Verificando...' : 'Verificar'}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setPhoneCodeSent(false);
+                                setPhoneCode('');
+                              }}
+                            >
+                              Reenviar
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                      {phoneVerified && (
+                        <div className="flex items-center gap-2 text-green-400 text-sm">
+                          <CheckCircle2 className="w-4 h-4" />
+                          WhatsApp verificado
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
                 <div className="md:col-span-2">
                   <Input
                     label="CEP *"
