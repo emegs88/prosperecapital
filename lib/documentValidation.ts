@@ -125,8 +125,10 @@ export async function extractDocumentData(file: File): Promise<DocumentValidatio
     errors.push('Arquivo muito grande. Máximo 5MB.');
   }
   
-  if (!validateFileType(file, ['image', 'pdf'])) {
-    errors.push('Formato inválido. Use JPG, PNG ou PDF.');
+  // Aceita imagens (JPG, PNG) e PDFs (digitais ou escaneados)
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+  if (!validateFileType(file, allowedTypes)) {
+    errors.push('Formato inválido. Use JPG, PNG ou PDF (digital ou escaneado).');
   }
   
   // Simulação de processamento OCR com delay realista

@@ -71,7 +71,7 @@ export default function AberturaContaPage() {
       : ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
 
     if (!validateFileType(file, allowedTypes)) {
-      alert(`Formato inválido. ${type === 'selfie' ? 'Use JPG ou PNG.' : 'Use JPG, PNG ou PDF.'}`);
+      alert(`Formato inválido. ${type === 'selfie' ? 'Use JPG ou PNG.' : 'Use JPG, PNG ou PDF (digital ou escaneado).'}`);
       return;
     }
 
@@ -372,7 +372,7 @@ export default function AberturaContaPage() {
                   <div>
                     <p className="text-sm text-yellow-400 font-medium mb-1">Importante</p>
                     <p className="text-xs text-prospere-gray-400">
-                      Envie documentos legíveis e válidos. Formatos aceitos: JPG, PNG, PDF (máx. 5MB)
+                      Envie documentos legíveis e válidos. Formatos aceitos: JPG, PNG, PDF digital ou escaneado (máx. 5MB)
                     </p>
                   </div>
                 </div>
@@ -677,7 +677,7 @@ function DocumentUpload({
         type="file"
         id={`upload-${type}`}
         className="hidden"
-        accept={isImage ? 'image/*' : 'image/*,.pdf'}
+        accept={isImage ? 'image/*' : 'image/*,.pdf,application/pdf'}
         onChange={handleFileSelect}
       />
       <label htmlFor={`upload-${type}`} className="cursor-pointer">
@@ -691,7 +691,7 @@ function DocumentUpload({
               Clique para selecionar ou arraste o arquivo aqui
             </p>
             <p className="text-xs text-prospere-gray-500 mt-1">
-              JPG, PNG ou PDF (máx. 5MB)
+              JPG, PNG ou PDF digital/escaneado (máx. 5MB)
             </p>
           </div>
           <Button variant="outline" size="sm" disabled={isValidating}>

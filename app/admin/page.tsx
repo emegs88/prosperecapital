@@ -431,7 +431,7 @@ export default function AdminPage() {
                         }
                         const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
                         if (!validateFileType(file, allowedTypes)) {
-                          alert('Formato inválido. Use JPG, PNG ou PDF.');
+                          alert('Formato inválido. Use JPG, PNG ou PDF (digital ou escaneado).');
                           return;
                         }
                         setValidatingDocument(file.name);
@@ -508,7 +508,7 @@ export default function AdminPage() {
                         }
                         const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
                         if (!validateFileType(file, allowedTypes)) {
-                          alert('Formato inválido. Use JPG, PNG ou PDF.');
+                          alert('Formato inválido. Use JPG, PNG ou PDF (digital ou escaneado).');
                           return;
                         }
                         const newDoc = {
@@ -1657,7 +1657,7 @@ function AdminDocumentUpload({
         type="file"
         id={`admin-upload-${type}`}
         className="hidden"
-        accept={isImage ? 'image/*' : 'image/*,.pdf'}
+        accept={isImage ? 'image/*' : 'image/*,.pdf,application/pdf'}
         onChange={handleFileSelect}
       />
       <label htmlFor={`admin-upload-${type}`} className="cursor-pointer">
@@ -1671,7 +1671,7 @@ function AdminDocumentUpload({
               Clique ou arraste o arquivo
             </p>
             <p className="text-xs text-prospere-gray-500 mt-1">
-              JPG, PNG ou PDF (máx. 5MB)
+              JPG, PNG ou PDF digital/escaneado (máx. 5MB)
             </p>
           </div>
           <Button variant="outline" size="sm" disabled={isValidating}>
